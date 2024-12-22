@@ -2,3 +2,4 @@ aiogram
 python-dotenv
 psycopg2-binary
 sqlalchemy
+pyyaml
