@@ -73,3 +73,35 @@ async def process_task_image(message: types.Message, state: FSMContext, bot: Bot
         await state.clear()
     else:
         await message.reply("Пожалуйста, отправьте изображение.")
+
+
+@router.message(lambda message: message.text and message.text.startswith('/add_examiner_'))
+async def add_examiner(message: types.Message, state: FSMContext):
+    telegram_id = message.from_user.id
+    user = User(telegram_id)
+
+    if not user.is_admin:
+        await message.reply("У вас нет прав для выполнения этой команды.")
+        return
+
+    command = message.text
+    parts = command.split('_')
+    if len(parts) != 3:
+        await message.reply("Использование: /add_examiner_<exam_id> <examiner_id>")
+        return
+
+    exam_id = int(parts[2].split()[0])
+    examiner_id = parts[2].split()[1]
+
+    exam = Exam.get_exam_by_id(exam_id)
+    if not exam:
+        await message.reply("Экзамен с указанным ID не найден.")
+        return
+
+    examiner = User(examiner_id)
+    if not examiner.exists():
+        await message.reply("Экзаменатор с указанным ID не найден.")
+        return
+
+    exam.add_examiner(examiner_id)
+    await message.reply(f"Экзаменатор с ID {examiner_id} добавлен в экзамен {exam_id}.")

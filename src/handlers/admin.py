@@ -19,3 +19,5 @@ async def view_exams_command(message: types.Message):
             await message.reply("У вас нет добавленных экзаменов.")
     else:
         await message.reply("У вас нет прав для просмотра экзаменов.")
+
+
