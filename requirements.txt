@@ -5,3 +5,5 @@ sqlalchemy
 pyyaml
 apscheduler
 numpy
+patool
+aspose-zip
