@@ -13,7 +13,8 @@ logging.basicConfig(level=logging.INFO)
 async def send_task_image(bot: Bot, telegram_id: int, image_path: str):
     try:
         photo_file = FSInputFile(path=image_path)
-        await bot.send_photo(chat_id=telegram_id, photo=photo_file, caption="Ваш билет:", reply_markup=user_exam_keyboard)
+        await bot.send_photo(chat_id=telegram_id, photo=photo_file)
+        await bot.send_message(chat_id=telegram_id, text="Ваш билет", reply_markup=user_exam_keyboard)
         logging.info(f"Отправлено изображение: {image_path}")
     except Exception as e:
         logging.error(f"Неизвестная ошибка при отправке изображения: {e}")
