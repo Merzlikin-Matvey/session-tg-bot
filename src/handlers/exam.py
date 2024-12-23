@@ -57,11 +57,9 @@ async def leave_exam(callback_query: types.CallbackQuery):
     user.set_registered_exam(None)
     await message.edit_text(f"Вы успешно покинули экзамен {exam.name}", reply_markup=user_main_menu_keyboard)
 
-@router.callback_query(lambda c: c.data == 'request_consultation') 
-async def request_consultation(callback_query: types.CallbackQuery, state: FSMContext):
-    await callback_query.answer()
-    message = callback_query.message
-    telegram_id = callback_query.from_user.id
+@router.message(lambda message: message.text == "Запросить консультацию")
+async def handle_ready_to_answer(message: types.Message, state: FSMContext):
+    telegram_id = message.from_user.id
     user = User(telegram_id)
     exam = Exam.get_exam_by_id(user.get_registered_exam())
     if exam:
@@ -71,12 +69,13 @@ async def request_consultation(callback_query: types.CallbackQuery, state: FSMCo
                 examiner = User(examiner_id)
                 response += f"{idx}. {examiner.name}\n"
             response += "Введите номер экзаменатора для запроса консультации:"
-            await message.edit_text(response)
+            await message.answer(response)
             await state.set_state(Form.awaiting_examiner_number)
         else:
-            await message.edit_text("Нет доступных экзаменаторов для консультации.", reply_markup=user_exam_keyboard)
+            await message.answer("Нет доступных экзаменаторов для консультации.", reply_markup=user_exam_keyboard)
     else:
         await message.reply("Экзамен не найден.")
+
 
 async def send_consultation_request(bot: Bot, examiner_id, requester_id, requester_name):
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
