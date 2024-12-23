@@ -57,6 +57,7 @@ class Exam(Base):
 
 
     def save(self):
+        print(self.exists())
         if self.exists():
             self.adapter.db.query(Exam).filter(Exam.name == self.name).update(
                 {
@@ -78,6 +79,8 @@ class Exam(Base):
         self.save()
 
     def add_participant(self, telegram_id):
+        print('======================')
+        print(telegram_id, self.participants)
         if telegram_id not in self.participants:
             self.participants.append(telegram_id)
             self.save()

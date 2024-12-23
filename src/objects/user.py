@@ -8,7 +8,6 @@ class User:
         self.id = telegram_id
         user_info = self.adapter.get_user_info(telegram_id)
         if user_info:
-            print(user_info)
             self.name = user_info.full_name
             self.is_admin = user_info.is_admin
             self.registered_exam_id = user_info.registered_exam_id
