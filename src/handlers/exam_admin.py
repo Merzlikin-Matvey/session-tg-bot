@@ -52,6 +52,7 @@ async def add_tasks_command(message: types.Message, state: FSMContext):
     user = User(telegram_id)
     if user.is_admin:
         await state.update_data(exam_id=exam_id)
+        print(state.get_data())
         await message.reply("Пожалуйста, отправьте файлы, изображения или задачи текстом.")
         await state.set_state(Form.awaiting_task_image)
     else:
@@ -59,34 +60,35 @@ async def add_tasks_command(message: types.Message, state: FSMContext):
 
 @router.message(Form.awaiting_task_image)
 async def process_task_image(message: types.Message, state: FSMContext, bot: Bot):
-    if message.content_type == types.ContentType.PHOTO:
-        photo = message.photo[-1]
-        data = await state.get_data()
-        print(data)
-        exam_id = data['exam_id']
+    while  message.text != "/stop_adding":
+        if message.content_type == types.ContentType.PHOTO:
+            photo = message.photo[-1]
+            data = await state.get_data()
+            print(data)
+            exam_id = data['exam_id']
 
-        save_path = await save_task_image(bot, photo.file_id, exam_id)
+            save_path = await save_task_image(bot, photo.file_id, exam_id)
 
-        exam = Exam.get_exam_by_id(exam_id)
-        exam.add_task(save_path)
-
-        await message.reply(f"Изображение с задачами успешно добавлено! Сохранено как {save_path}")
-        await state.clear()
-    elif message.content_type == types.ContentType.DOCUMENT:
-        data = await state.get_data()
-        print(data)
-        exam_id = data['exam_id']
-        if '.pdf' in message.document.file_name:
-            save_path = await save_task_pdf(bot, message.document.file_id, exam_id)
             exam = Exam.get_exam_by_id(exam_id)
             exam.add_task(save_path)
-        if '.zip' in message.document.file_name:
-            save_path = await save_task_zip(bot, message.document.file_id, exam_id)
 
-        if '.rar' in message.document.file_name:
-            save_path = await save_task_rar(bot, message.document.file_id, exam_id)
+            await message.reply(f"Изображение с задачами успешно добавлено! Сохранено как {save_path}")
+            await state.clear()
+        if message.content_type == types.ContentType.DOCUMENT:
+            data = await state.get_data()
+            print(data)
+            exam_id = data['exam_id']
+            if '.pdf' in message.document.file_name:
+                save_path = await save_task_pdf(bot, message.document.file_id, exam_id)
+                exam = Exam.get_exam_by_id(exam_id)
+                exam.add_task(save_path)
+            if '.zip' in message.document.file_name:
+                save_path = await save_task_zip(bot, message.document.file_id, exam_id)
 
-    elif message.text == "/stop_adding":
+            if '.rar' in message.document.file_name:
+                save_path = await save_task_rar(bot, message.document.file_id, exam_id)
+
+    else:
         await message.reply("Добавление задач остановлено.")
         await state.clear()
 
