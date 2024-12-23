@@ -31,3 +31,5 @@ class User:
 
     def get_all_exams(self):
         return self.adapter.get_all_exams()
+
+
