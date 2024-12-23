@@ -3,12 +3,8 @@ from aiogram import Bot, Dispatcher
 from dotenv import load_dotenv
 import os
 from src.handlers import start, exam_admin, admin, exam
-from src.database.db_adapter import DatabaseAdapter
-from src.objects.exam import Exam
 from src.schedule import check_new_exams
-from src.send_task import send_tasks_for_all_users
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from datetime import datetime
 
 load_dotenv()
 

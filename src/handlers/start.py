@@ -8,6 +8,7 @@ router = Router()
 
 @router.message(Command('start'))
 async def send_welcome(message: types.Message, state: FSMContext):
+    print("УРАААА")
     telegram_id = message.from_user.id
     user = User(telegram_id)
     if not user.exists():
