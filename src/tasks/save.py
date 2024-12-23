@@ -2,7 +2,6 @@ import os
 from datetime import datetime
 from aiogram import Bot
 import yaml
-from src.objects.exam import Exam
 
 def get_tasks_dir() -> str:
     with open('config.yaml', 'r') as file:
