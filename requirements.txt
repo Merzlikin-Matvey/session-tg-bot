@@ -3,3 +3,5 @@ python-dotenv
 psycopg2-binary
 sqlalchemy
 pyyaml
+apscheduler
+numpy

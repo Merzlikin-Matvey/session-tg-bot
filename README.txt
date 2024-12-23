@@ -1,0 +1,1 @@
+Запуск: python -m src

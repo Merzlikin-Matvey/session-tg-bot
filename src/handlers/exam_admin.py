@@ -38,7 +38,9 @@ async def process_exam_datetime(message: types.Message, state: FSMContext):
         exam.save()
         await message.reply("Экзамен успешно добавлен!")
         await state.clear()
-    except ValueError:
+    except ValueError as e:
+        print("ValueError")
+        print(e)
         await message.reply("Неверный формат даты и времени. Пожалуйста, попробуйте снова (в формате ГГГГ-ММ-ДД ЧЧ:ММ):")
 
 @router.message(lambda message: message.text and message.text.startswith('/add_tasks_'))
