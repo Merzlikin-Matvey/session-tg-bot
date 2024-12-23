@@ -27,10 +27,7 @@ class User:
         self.is_admin = is_admin
 
     def save(self):
-        user_info = self.adapter.get_user_info(self.id)
-        if user_info:
-            user_info.full_name = self.name
-            user_info.is_admin = self.is_admin
+        pass
 
     def get_all_exams(self):
         return self.adapter.get_all_exams()
