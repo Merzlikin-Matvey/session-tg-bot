@@ -43,7 +43,7 @@ async def process_exam_datetime(message: types.Message, state: FSMContext):
         exam_name = data['exam_name']
         exam = Exam(exam_name, exam_datetime)
         exam.save()
-        await message.answer("Экзамен успешно добавлен!", reply_markup=admin_main_menu_keyboard)
+        await message.answer("Экзамен успешно добавлен!", reply_markup=admin_edit_exam_keyboard)
         await state.clear()
     except ValueError as e:
         print("ValueError")
