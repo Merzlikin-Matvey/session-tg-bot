@@ -58,6 +58,7 @@ async def leave_exam(callback_query: types.CallbackQuery):
 
     exam = Exam.get_exam_by_id(user.registered_exam_id)
     if exam:
+        print("Exam", exam)
         exam.remove_participant(telegram_id)
         user.set_registered_exam(None)
         await callback_query.message.edit_text(f"Вы успешно покинули экзамен {exam.name}", reply_markup=user_main_menu_keyboard)
@@ -72,6 +73,7 @@ async def leave_all_exams_command(message: types.Message):
     all_exams = Exam.get_all_exams()
     for exam in all_exams:
         if str(telegram_id) in exam.participants:
+            print("Удалить из этого")
             exam.remove_participant(str(telegram_id))
     user.set_registered_exam(None)
     await message.reply("Вы успешно покинули все экзамены.")

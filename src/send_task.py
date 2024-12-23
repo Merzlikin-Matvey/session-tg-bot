@@ -22,6 +22,10 @@ async def send_task_image(bot: Bot, telegram_id: int, image_path: str):
 async def send_tasks_for_all_users(bot: Bot, exam: Exam):
     participants = exam.participants
     tasks_paths = exam.tasks_paths
+    if not tasks_paths:
+        return
+    if len(tasks_paths) < 3:
+        return
     tasks_paths = tasks_paths.split(';')
 
     if isinstance(tasks_paths, str):
