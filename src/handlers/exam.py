@@ -79,33 +79,63 @@ async def request_consultation(callback_query: types.CallbackQuery, state: FSMCo
         await message.reply("Экзамен не найден.")
 
 async def send_consultation_request(bot: Bot, examiner_id, requester_id, requester_name):
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+        [types.InlineKeyboardButton(text="Принять", callback_data=f"accept_consultation:{requester_id}"),
+         types.InlineKeyboardButton(text="Отклонить", callback_data=f"decline_consultation:{requester_id}")]
+    ])
+
     await bot.send_message(
         examiner_id,
         f"Пользователь {requester_name} запрашивает консультацию. Принять или отклонить?",
-        reply_markup=admin_exam_keyboard
+        reply_markup=keyboard
     )
 
-
-
-@router.callback_query(Form.awaiting_examiner_number)
-async def process_examiner_number(callback_query: types.CallbackQuery, state: FSMContext):
+@router.message(Form.awaiting_examiner_number)
+async def process_examiner_number(message: types.Message, state: FSMContext):
     try:
-        examiner_number = int(callback_query.data)
-        telegram_id = callback_query.from_user.id
+        examiner_number = int(message.text)
+        print(f"Выбранный номер экзаменатора: {examiner_number}")
+        telegram_id = message.from_user.id
         user = User(telegram_id)
         exam = Exam.get_exam_by_id(user.get_registered_exam())
 
         if 1 <= examiner_number <= len(exam.examiners):
             examiner_id = exam.examiners[examiner_number - 1]
-            await send_consultation_request(callback_query.bot, examiner_id, callback_query.from_user.id, callback_query.from_user.full_name)
-            await callback_query.message.answer("Запрос на консультацию отправлен экзаменатору.", reply_markup=user_exam_keyboard)
+            await send_consultation_request(message.bot, examiner_id, message.from_user.id, message.from_user.full_name)
+            await message.answer("Запрос на консультацию отправлен экзаменатору.", reply_markup=user_exam_keyboard)
             await state.clear()
         else:
-            await callback_query.message.answer("Неверный номер экзаменатора. Пожалуйста, попробуйте снова.")
+            await message.answer("Неверный номер экзаменатора. Пожалуйста, попробуйте снова.")
     except ValueError as e:
         print(e)
-        await callback_query.message.reply("Пожалуйста, введите корректный номер экзаменатора.")
+        await message.reply("Пожалуйста, введите корректный номер экзаменатора.")
 
+
+@router.callback_query(lambda c: c.data.startswith("accept_consultation"))
+async def accept_consultation(callback_query: types.CallbackQuery, state: FSMContext, bot: Bot):
+    await callback_query.answer()
+    examiner_id = callback_query.from_user.id
+    data = callback_query.data.split(":")
+    student_id = data[1]
+
+    student = User(student_id)
+    examiner = User(examiner_id)
+
+    await bot.send_message(student_id, f"Ваш запрос на консультацию принят экзаменатором {examiner.name}.")
+    await bot.send_message(examiner_id, f"Вы приняли запрос на консультацию от {student.name}.")
+
+@router.callback_query(lambda c: c.data.startswith("decline_consultation"))
+async def decline_consultation(callback_query: types.CallbackQuery, state: FSMContext, bot: Bot):
+    await callback_query.answer()
+    examiner_id = callback_query.from_user.id
+    data = callback_query.data.split(":")
+    student_id = data[1]
+
+    student = User(student_id)
+    examiner = User(examiner_id)
+
+    await bot.send_message(student_id, f"Ваш запрос на консультацию отклонен экзаменатором {examiner.name}.")
+    await bot.send_message(examiner_id, f"Вы отклонили запрос на консультацию от {student.name}.")
 
 @router.callback_query(lambda c: c.data.startswith("accept_student"))
 async def handle_accept_student(callback_query: types.CallbackQuery, state: FSMContext, bot: Bot):
@@ -148,6 +178,8 @@ async def send_ready_notification(bot: Bot, examiner_id, student_id, student_nam
 
     return message.message_id
 
+
+
 @router.message(Command('ready_to_answer'))
 async def ready_to_answer_command(message: types.Message, state: FSMContext):
     telegram_id = message.from_user.id
@@ -168,4 +200,6 @@ async def ready_to_answer_command(message: types.Message, state: FSMContext):
             await message.reply("Вы не зарегистрированы на экзамен.")
     else:
         await message.reply("Вы не зарегистрированы в системе.")
+
+
 
