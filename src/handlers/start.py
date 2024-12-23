@@ -8,6 +8,7 @@ from src.keyboards.admin_keyboards import *
 
 router = Router()
 
+
 @router.message(Command('start'))
 async def send_welcome(message: types.Message, state: FSMContext):
     telegram_id = message.from_user.id
@@ -20,6 +21,7 @@ async def send_welcome(message: types.Message, state: FSMContext):
             await message.answer(f"Привет, {user.name}! Добро пожаловать в нашего бота!", reply_markup=admin_main_menu_keyboard)
         else:
             await message.answer(f"Привет, {user.name}! Добро пожаловать в нашего бота!", reply_markup=user_main_menu_keyboard)
+
 
 @router.message(Form.awaiting_full_name)
 async def process_full_name(message: types.Message, state: FSMContext):
