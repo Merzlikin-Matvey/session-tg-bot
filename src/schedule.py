@@ -12,6 +12,7 @@ async def schedule_exams(bot: Bot):
     exams = adapter.get_all_exams()
     for exam in exams:
         exam_time = exam.timestamp
+        print(exam_time, datetime.now(), exam_time <= datetime.now())
         if not exam.started and exam_time <= datetime.now():
             await send_tasks_for_all_users(bot, exam)
             exam.started = True
