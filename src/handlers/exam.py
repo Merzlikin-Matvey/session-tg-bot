@@ -89,6 +89,7 @@ async def process_examiner_number(message: types.Message, state: FSMContext):
         print(e)
         await message.reply("Пожалуйста, введите корректный номер экзаменатора.")
 
+
 @router.callback_query(lambda c: c.data.startswith("accept_consultation") or c.data.startswith("decline_consultation"))
 async def handle_consultation_response(callback_query: types.CallbackQuery, bot: Bot):
     examiner_id = callback_query.from_user.id

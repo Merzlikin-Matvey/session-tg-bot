@@ -5,3 +5,4 @@ sqlalchemy
 pyyaml
 apscheduler
 numpy
+flake8
