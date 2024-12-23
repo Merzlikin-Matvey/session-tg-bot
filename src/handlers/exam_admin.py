@@ -6,27 +6,31 @@ from src.objects.user import User
 from src.objects.exam import Exam
 from src.forms import Form
 from src.tasks.save import save_task_image, save_task_pdf, save_task_zip, save_task_rar
+from src.keyboards.user_keyboards import *
+from src.keyboards.admin_keyboards import *
 from aiogram import Bot
 
 router = Router()
 
 
-@router.message(Command('add_exam'))
-async def add_exam_command(message: types.Message, state: FSMContext):
-    telegram_id = message.from_user.id
+@router.callback_query(lambda c: c.data == 'add_exam') 
+async def add_exam_command(callback_query: types.CallbackQuery, state: FSMContext):
+    telegram_id = callback_query.from_user.id
+    callback_query.answer()
+    message = callback_query.message
     user = User(telegram_id)
     if user.is_admin:
-        await message.reply("Пожалуйста, введите название экзамена:")
+        await message.edit_text("Пожалуйста, введите название экзамена:")
         await state.set_state(Form.awaiting_exam_name)
     else:
-        await message.reply("У вас нет прав для добавления экзамена.")
+        await message.edit_text("У вас нет прав для добавления экзамена.", reply_markup=admin_main_menu_keyboard)
 
 
 @router.message(Form.awaiting_exam_name)
 async def process_exam_name(message: types.Message, state: FSMContext):
     exam_name = message.text
     await state.update_data(exam_name=exam_name)
-    await message.reply("Пожалуйста, введите дату и время начала экзамена (в формате ГГГГ-ММ-ДД ЧЧ:ММ):")
+    await message.answer("Пожалуйста, введите дату и время начала экзамена (в формате ДД.ММ.ГГ ЧЧ:ММ):")
     await state.set_state(Form.awaiting_exam_datetime)
 
 
@@ -34,18 +38,36 @@ async def process_exam_name(message: types.Message, state: FSMContext):
 async def process_exam_datetime(message: types.Message, state: FSMContext):
     exam_datetime_str = message.text
     try:
-        exam_datetime = datetime.strptime(exam_datetime_str, "%Y-%m-%d %H:%M")
+        exam_datetime = datetime.strptime(exam_datetime_str, "%d.%m.%y %H:%M")
         data = await state.get_data()
         exam_name = data['exam_name']
         exam = Exam(exam_name, exam_datetime)
         exam.save()
-        await message.reply("Экзамен успешно добавлен!")
+        await message.answer("Экзамен успешно добавлен!", reply_markup=admin_main_menu_keyboard)
         await state.clear()
     except ValueError as e:
         print("ValueError")
         print(e)
-        await message.reply("Неверный формат даты и времени. Пожалуйста, попробуйте снова (в формате ГГГГ-ММ-ДД ЧЧ:ММ):")
+        await message.reply("Неверный формат даты и времени. Пожалуйста, попробуйте снова (в формате ДД.ММ.ГГ ЧЧ:ММ):")
 
+@router.callback_query(lambda c: c.data == 'edit_exam')
+async def edit_exam(callback_query: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    await callback_query.answer()
+    message = callback_query.message
+    try:
+        exams = Exam.get_all_exams()
+        if exams:
+            response = "Список доступных экзаменов:\n\n"
+            for i in range(len(exams)):
+                response += f"{i + 1}. Название: {exams[i].name}, Дата и время: {exams[i].timestamp}\n"
+            response += "\nНапишите номер экзамена, который хотите изменить."
+            await message.edit_text(response)
+            await state.set_state(Form.join_exam_num)
+        else:
+            await message.edit_text("Нет доступных экзаменов")
+    except:
+        await message.edit_text("Нет доступных экзаменов")
 
 @router.message(lambda message: message.text and message.text.startswith('/add_tasks_'))
 async def add_tasks_command(message: types.Message, state: FSMContext):

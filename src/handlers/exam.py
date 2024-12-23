@@ -23,7 +23,7 @@ async def join_exam_list(callback_query: types.CallbackQuery, state: FSMContext)
                 response += f"{i + 1}. Название: {exams[i].name}, Дата и время: {exams[i].timestamp}\n"
             response += "\nНапишите номер экзамена, к которому хотите присоединиться."
             await message.edit_text(response)
-            await state.set_state(Form.join_exam_num)
+            await state.set_state(Form.edit_exam_num)
         else:
             await message.edit_text("Нет доступных экзаменов")
     except:
@@ -101,7 +101,7 @@ async def process_examiner_number(message: types.Message, state: FSMContext):
         if 1 <= examiner_number <= len(exam.examiners):
             examiner_id = exam.examiners[examiner_number - 1]
             await send_consultation_request(message.bot, examiner_id, message.from_user.id, message.from_user.full_name)
-            await message.answer("Запрос на консультацию отправлен экзаменатору.", reply_markup=user_exam_keyboard)
+            await message.answer("Запрос на консультацию отправлен экзаменатору.")
             await state.clear()
         else:
             await message.answer("Неверный номер экзаменатора. Пожалуйста, попробуйте снова.")
@@ -120,7 +120,7 @@ async def accept_consultation(callback_query: types.CallbackQuery, state: FSMCon
     student = User(student_id)
     examiner = User(examiner_id)
 
-    await bot.send_message(student_id, f"Ваш запрос на консультацию принят экзаменатором {examiner.name}.", reply_markup=user_exam_keyboard)
+    await bot.edit_message_text(chat_id=student_id, text=f"Ваш запрос на консультацию принят экзаменатором {examiner.name}.", reply_markup=user_exam_keyboard, message_id=callback_query.message.message_id)
     await bot.edit_message_text(chat_id=examiner_id, text=f"Вы приняли запрос на консультацию от {student.name}.", message_id=callback_query.message.message_id)
 
 @router.callback_query(lambda c: c.data.startswith("decline_consultation"))
@@ -133,7 +133,7 @@ async def decline_consultation(callback_query: types.CallbackQuery, state: FSMCo
     student = User(student_id)
     examiner = User(examiner_id)
 
-    await bot.send_message(student_id, f"Ваш запрос на консультацию отклонен экзаменатором {examiner.name}.", reply_markup=user_exam_keyboard)
+    await bot.edit_message_text(chat_id=student_id, text=f"Ваш запрос на консультацию отклонен экзаменатором {examiner.name}.", reply_markup=user_exam_keyboard,message_id=callback_query.message.message_id)
     await bot.edit_message_text(chat_id=examiner_id, text=f"Вы отклонили запрос на консультацию от {student.name}.", message_id=callback_query.message.message_id)
 
 @router.callback_query(lambda c: c.data.startswith("accept_student"))
