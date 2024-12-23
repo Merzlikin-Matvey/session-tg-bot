@@ -88,9 +88,14 @@ async def process_task_image(message: types.Message, state: FSMContext, bot: Bot
             return
 
         exam = Exam.get_exam_by_id(exam_id)
-        exam.add_task(save_path)
-
-        await message.reply(f"Файл с задачами успешно добавлен! Сохранено как {save_path}")
+        if isinstance(save_path, str):
+            save_path =  [save_path]
+            exam.add_task(save_path)
+        else:
+            for i in save_path:
+                exam.add_task(i)
+        
+        await message.reply(f"Файл с задачами успешно добавлен! Сохранено как {",".join(save_path)}")
 
     else:
         await message.reply("Добавление задач завершено.")
