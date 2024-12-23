@@ -4,6 +4,8 @@ from aiogram.types import FSInputFile
 import numpy as np
 
 from src.objects.exam import Exam
+from src.keyboards.user_keyboards import *
+from src.keyboards.admin_keyboards import *
 
 logging.basicConfig(level=logging.INFO)
 
@@ -11,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 async def send_task_image(bot: Bot, telegram_id: int, image_path: str):
     try:
         photo_file = FSInputFile(path=image_path)
-        msg = await bot.send_photo(chat_id=telegram_id, photo=photo_file, caption="Ваш билет:")
+        await bot.send_photo(chat_id=telegram_id, photo=photo_file, caption="Ваш билет:", reply_markup=user_exam_keyboard)
         logging.info(f"Отправлено изображение: {image_path}")
     except Exception as e:
         logging.error(f"Неизвестная ошибка при отправке изображения: {e}")

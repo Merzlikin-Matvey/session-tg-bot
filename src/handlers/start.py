@@ -11,6 +11,7 @@ router = Router()
 
 @router.message(Command('start'))
 async def send_welcome(message: types.Message, state: FSMContext):
+    await state.clear()
     telegram_id = message.from_user.id
     user = User(telegram_id)
     if not user.exists():
@@ -34,4 +35,3 @@ async def process_full_name(message: types.Message, state: FSMContext):
         await message.answer("Спасибо! Ваши данные сохранены.", reply_markup=admin_main_menu_keyboard)
     else:
         await message.answer("Спасибо! Ваши данные сохранены.", reply_markup=user_main_menu_keyboard)
-    await state.clear()

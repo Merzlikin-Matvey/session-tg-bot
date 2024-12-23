@@ -8,17 +8,36 @@ from src.forms import Form
 router = Router()
 
 
-@router.message(Command('exam_list'))
-async def exam_list_command(message: types.Message):
+@router.callback_query(lambda c: c.data == 'join_exam') 
+async def join_exam_list(callback_query: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    await callback_query.answer()
+    message = callback_query.message
     exams = Exam.get_all_exams()
     if exams:
-        response = "Список доступных экзаменов:\n"
-        for exam in exams:
-            response += f"Название: {exam.name}, Дата и время: {exam.timestamp}, Команда для присоединения: /join_exam_{exam.id}\n"
-        await message.reply(response)
+        response = "Список доступных экзаменов:\n\n"
+        for i in range(len(exams)):
+            response += f"{i + 1}. Название: {exams[i].name}, Дата и время: {exams[i].timestamp}\n"
+        response += "\nНапишите номер экзамена, к которому хотите присоединиться."
+        await message.edit_text(response)
+        await state.set_state(Form.join_exam_num)
     else:
-        await message.reply("Нет доступных экзаменов")
+        await message.edit_text("Нет доступных экзаменов")
 
+@router.message(Form.join_exam_num)
+async def join_exam(message: types.Message, state: FSMContext):
+    text = message.text
+    exams = Exam.get_all_exams()
+    if (not text.isdigit()) or int(text) > len(exams):
+        await message.answer("Экзамен не найден.")
+    exam_id = exams[int(text) - 1].id
+    telegram_id = message.from_user.id
+    exam = Exam.get_exam_by_id(exam_id)
+    if str(telegram_id) in exam.participants:
+        await message.answer("Вы уже присоединились к этому экзамену.")
+    else:
+        exam.add_participant(str(telegram_id))
+        await message.answer(f"Вы успешно присоединились к экзамену {exam.name}!")
 
 @router.message(lambda message: message.text and message.text.startswith('/join_exam_'))
 async def join_exam_command(message: types.Message):
