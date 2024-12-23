@@ -80,3 +80,6 @@ class Exam(Base):
         if telegram_id not in self.examiners:
             self.examiners.append(telegram_id)
             self.save()
+
+    def is_examiner(self, telegram_id):
+        return telegram_id in self.examiners
