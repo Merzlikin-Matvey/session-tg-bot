@@ -1,7 +1,7 @@
 from aiogram import types, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from src.user import User
+from src.objects.user import User
 from src.forms import Form
 
 router = Router()

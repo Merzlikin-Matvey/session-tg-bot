@@ -1,2 +1,4 @@
 default_admins:
   - 6063850010
+
+tasks_dir: tasks

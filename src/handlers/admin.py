@@ -1,6 +1,6 @@
 from aiogram import types, Router
 from aiogram.filters import Command
-from src.user import User
+from src.objects.user import User
 
 router = Router()
 
@@ -13,10 +13,9 @@ async def view_exams_command(message: types.Message):
         if exams:
             response = "Ваши экзамены:\n"
             for exam in exams:
-                response += f"Название: {exam.name}, Дата и время: {exam.timestamp}\n"
+                response += f"Название: {exam.name}, Дата и время: {exam.timestamp}, Команда для добавления задач: /add_tasks_{exam.id}\n"
             await message.reply(response)
         else:
             await message.reply("У вас нет добавленных экзаменов.")
     else:
         await message.reply("У вас нет прав для просмотра экзаменов.")
-

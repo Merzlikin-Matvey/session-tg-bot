@@ -4,3 +4,4 @@ class Form(StatesGroup):
     awaiting_full_name = State()
     awaiting_exam_name = State()
     awaiting_exam_datetime = State()
+    awaiting_task_image = State()
