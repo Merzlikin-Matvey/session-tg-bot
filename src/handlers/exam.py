@@ -72,7 +72,6 @@ async def request_consultation(callback_query: types.CallbackQuery, state: FSMCo
                 response += f"{idx}. {examiner.name}\n"
             response += "Введите номер экзаменатора для запроса консультации:"
             await message.edit_text(response)
-            await state.update_data(exam_id=exam.id)
             await state.set_state(Form.awaiting_examiner_number)
         else:
             await message.edit_text("Нет доступных экзаменаторов для консультации.", reply_markup=user_exam_keyboard)
@@ -87,24 +86,25 @@ async def send_consultation_request(bot: Bot, examiner_id, requester_id, request
     )
 
 
-@router.message(Form.awaiting_examiner_number)
-async def process_examiner_number(message: types.Message, state: FSMContext):
+
+@router.callback_query(Form.awaiting_examiner_number)
+async def process_examiner_number(callback_query: types.CallbackQuery, state: FSMContext):
     try:
-        examiner_number = int(message.text)
-        data = await state.get_data()
-        exam_id = data['exam_id']
-        exam = Exam.get_exam_by_id(exam_id)
+        examiner_number = int(callback_query.data)
+        telegram_id = callback_query.from_user.id
+        user = User(telegram_id)
+        exam = Exam.get_exam_by_id(user.get_registered_exam())
 
         if 1 <= examiner_number <= len(exam.examiners):
             examiner_id = exam.examiners[examiner_number - 1]
-            await send_consultation_request(message.bot, examiner_id, message.from_user.id, message.from_user.full_name)
-            await message.answer("Запрос на консультацию отправлен экзаменатору.", reply_markup=user_exam_keyboard)
+            await send_consultation_request(callback_query.bot, examiner_id, callback_query.from_user.id, callback_query.from_user.full_name)
+            await callback_query.message.answer("Запрос на консультацию отправлен экзаменатору.", reply_markup=user_exam_keyboard)
             await state.clear()
         else:
-            await message.answer("Неверный номер экзаменатора. Пожалуйста, попробуйте снова.")
+            await callback_query.message.answer("Неверный номер экзаменатора. Пожалуйста, попробуйте снова.")
     except ValueError as e:
         print(e)
-        await message.reply("Пожалуйста, введите корректный номер экзаменатора.")
+        await callback_query.message.reply("Пожалуйста, введите корректный номер экзаменатора.")
 
 
 @router.callback_query(lambda c: c.data.startswith("accept_student"))

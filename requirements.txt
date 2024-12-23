@@ -1,8 +1,9 @@
-aiogram
 python-dotenv
 psycopg2-binary
 sqlalchemy
 pyyaml
 apscheduler
 numpy
-flake8
+patool
+aspose-zip
+aiogram
