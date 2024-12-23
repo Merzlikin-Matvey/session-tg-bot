@@ -2,7 +2,6 @@ import os
 import zipfile
 import patoolib
 import shutil
-import aspose.zip as az
 from aiogram import Bot
 import yaml
 import uuid
