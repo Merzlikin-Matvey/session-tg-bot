@@ -3,6 +3,8 @@ import sys
 sys.path.append('./src')
 from src.objects.user import User
 
+
+
 class UserTests(unittest.TestCase):
     def test_creating(self):
         try:

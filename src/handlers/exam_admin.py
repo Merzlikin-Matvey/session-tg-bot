@@ -55,7 +55,7 @@ async def add_tasks_command(message: types.Message, state: FSMContext):
     user = User(telegram_id)
     if user.is_admin:
         await state.update_data(exam_id=exam_id)
-        await message.reply("Пожалуйста, отправьте изображение с задачами для экзамена:")
+        await message.reply("Пожалуйста, отправьте архив,сжатую папку или изображения с задачами для экзамена:")
         await state.set_state(Form.awaiting_task_image)
     else:
         await message.reply("У вас нет прав для добавления задач.")
@@ -70,7 +70,7 @@ async def process_task_image(message: types.Message, state: FSMContext, bot: Bot
     if message.content_type == types.ContentType.PHOTO:
         photo = message.photo[-1]
         save_path = await save_task_image(bot, photo.file_id, exam_id)
-
+        print(save_path)
         exam = Exam.get_exam_by_id(exam_id)
         exam.add_task(save_path)
 
