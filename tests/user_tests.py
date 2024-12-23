@@ -4,13 +4,12 @@ sys.path.append('./src')
 from src.objects.user import User
 
 
-
 class UserTests(unittest.TestCase):
     def test_creating(self):
         try:
             user = User(123456789)
             self.assertIsNotNone(user)
-        except:
+        except Exception as e:
             self.fail("Не создается :(")
 
     def test_exists(self):

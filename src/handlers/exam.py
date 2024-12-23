@@ -10,7 +10,7 @@ from src.keyboards.admin_keyboards import *
 router = Router()
 
 
-@router.callback_query(lambda c: c.data == 'join_exam') 
+@router.callback_query(lambda c: c.data == 'join_exam')
 async def join_exam_list(callback_query: types.CallbackQuery, state: FSMContext):
     await state.clear()
     await callback_query.answer()
@@ -26,8 +26,9 @@ async def join_exam_list(callback_query: types.CallbackQuery, state: FSMContext)
             await state.set_state(Form.join_exam_num)
         else:
             await message.edit_text("Нет доступных экзаменов")
-    except:
+    except Exception as e:
         await message.edit_text("Нет доступных экзаменов")
+
 
 @router.message(Form.join_exam_num)
 async def join_exam(message: types.Message, state: FSMContext):
@@ -48,6 +49,7 @@ async def join_exam(message: types.Message, state: FSMContext):
         user.set_registered_exam(exam_id)
         await message.answer(f"Вы успешно присоединились к экзамену {exam.name}", reply_markup=user_leave_exam_keyboard)
 
+
 @router.callback_query(lambda c: c.data == 'leave_exam')
 async def leave_exam(callback_query: types.CallbackQuery):
     await callback_query.answer()
@@ -65,6 +67,7 @@ async def leave_exam(callback_query: types.CallbackQuery):
     else:
         await callback_query.message.edit_text("Экзамен не найден")
 
+
 @router.message(Command('leave_all_exams'))
 async def leave_all_exams_command(message: types.Message):
     telegram_id = message.from_user.id
@@ -77,6 +80,7 @@ async def leave_all_exams_command(message: types.Message):
             exam.remove_participant(str(telegram_id))
     user.set_registered_exam(None)
     await message.reply("Вы успешно покинули все экзамены.")
+
 
 @router.message(lambda message: message.text and message.text.startswith('/request_consultation_'))
 async def request_consultation_command(message: types.Message, state: FSMContext):
@@ -161,6 +165,7 @@ async def handle_accept_student(callback_query: types.CallbackQuery, state: FSMC
 
     await callback_query.answer()
 
+
 async def send_ready_notification(bot: Bot, examiner_id, student_id, student_name, exam_id):
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
         [types.InlineKeyboardButton(text="Принять", callback_data=f"accept_student:{student_id}:{exam_id}")]
@@ -173,6 +178,7 @@ async def send_ready_notification(bot: Bot, examiner_id, student_id, student_nam
     )
 
     return message.message_id
+
 
 @router.message(Command('ready_to_answer'))
 async def ready_to_answer_command(message: types.Message, state: FSMContext):
@@ -194,4 +200,3 @@ async def ready_to_answer_command(message: types.Message, state: FSMContext):
             await message.reply("Вы не зарегистрированы на экзамен.")
     else:
         await message.reply("Вы не зарегистрированы в системе.")
-
