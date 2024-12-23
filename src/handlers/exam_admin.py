@@ -10,6 +10,7 @@ from aiogram import Bot
 
 router = Router()
 
+
 @router.message(Command('add_exam'))
 async def add_exam_command(message: types.Message, state: FSMContext):
     telegram_id = message.from_user.id
@@ -20,12 +21,14 @@ async def add_exam_command(message: types.Message, state: FSMContext):
     else:
         await message.reply("У вас нет прав для добавления экзамена.")
 
+
 @router.message(Form.awaiting_exam_name)
 async def process_exam_name(message: types.Message, state: FSMContext):
     exam_name = message.text
     await state.update_data(exam_name=exam_name)
     await message.reply("Пожалуйста, введите дату и время начала экзамена (в формате ГГГГ-ММ-ДД ЧЧ:ММ):")
     await state.set_state(Form.awaiting_exam_datetime)
+
 
 @router.message(Form.awaiting_exam_datetime)
 async def process_exam_datetime(message: types.Message, state: FSMContext):
@@ -43,6 +46,7 @@ async def process_exam_datetime(message: types.Message, state: FSMContext):
         print(e)
         await message.reply("Неверный формат даты и времени. Пожалуйста, попробуйте снова (в формате ГГГГ-ММ-ДД ЧЧ:ММ):")
 
+
 @router.message(lambda message: message.text and message.text.startswith('/add_tasks_'))
 async def add_tasks_command(message: types.Message, state: FSMContext):
     command = message.text
@@ -55,6 +59,7 @@ async def add_tasks_command(message: types.Message, state: FSMContext):
         await state.set_state(Form.awaiting_task_image)
     else:
         await message.reply("У вас нет прав для добавления задач.")
+
 
 @router.message(Form.awaiting_task_image)
 async def process_task_image(message: types.Message, state: FSMContext, bot: Bot):
@@ -109,4 +114,4 @@ async def add_examiner(message: types.Message, state: FSMContext):
 
     except Exception as e:
         print(e)
-        await message.reply(f"CRITICAL ERROR")
+        await message.reply("CRITICAL ERROR")

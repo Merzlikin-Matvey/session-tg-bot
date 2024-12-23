@@ -18,6 +18,7 @@ async def schedule_exams(bot: Bot):
             adapter.db.commit()
     adapter.close()
 
+
 async def check_new_exams(bot: Bot):
     while True:
         await schedule_exams(bot)

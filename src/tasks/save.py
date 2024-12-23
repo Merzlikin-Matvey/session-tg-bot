@@ -1,8 +1,8 @@
 import os
-from datetime import datetime
 from aiogram import Bot
 import yaml
 import uuid
+
 
 def get_tasks_dir() -> str:
     with open('config.yaml', 'r') as file:
@@ -10,6 +10,7 @@ def get_tasks_dir() -> str:
     tasks_dir = config['tasks_dir']
 
     return tasks_dir
+
 
 async def save_task_image(bot: Bot, file_id: str, exam_id: str) -> str:
     uuid_value = str(uuid.uuid4())

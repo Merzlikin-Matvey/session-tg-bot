@@ -8,6 +8,7 @@ load_dotenv()
 
 Base = declarative_base()
 
+
 class User(Base):
     __tablename__ = 'users'
     telegram_id = Column(String, primary_key=True)
@@ -23,6 +24,7 @@ class Exam(Base):
     tasks_paths = Column(Text)
     participants = Column(ARRAY(String), default=[])
     started = Column(Boolean, default=False)
+
 
 DB_NAME = os.getenv('DB_NAME')
 DB_USER = os.getenv('DB_USER')

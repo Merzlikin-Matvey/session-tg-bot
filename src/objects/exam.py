@@ -4,6 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
+
 class Exam(Base):
     __tablename__ = 'exams'
 
@@ -15,7 +16,7 @@ class Exam(Base):
     examiners = Column(ARRAY(String), default=[])
     started = Column(Boolean, default=False)
 
-    def __init__(self, name, timestamp, tasks_paths="", participants=[], examiners=[],started=False):
+    def __init__(self, name, timestamp, tasks_paths="", participants=[], examiners=[], started=False):
         self.adapter = DatabaseAdapter()
         self.name = name
         self.timestamp = timestamp
@@ -62,7 +63,6 @@ class Exam(Base):
         else:
             self.adapter.db.add(self)
         self.adapter.db.commit()
-
 
     def add_task(self, path):
         if self.tasks_paths:

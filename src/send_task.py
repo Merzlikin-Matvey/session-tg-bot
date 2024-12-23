@@ -7,6 +7,7 @@ from src.objects.exam import Exam
 
 logging.basicConfig(level=logging.INFO)
 
+
 async def send_task_image(bot: Bot, telegram_id: int, image_path: str):
     try:
         photo_file = FSInputFile(path=image_path)
@@ -32,4 +33,3 @@ async def send_tasks_for_all_users(bot: Bot, exam: Exam):
         for i, telegram_id in enumerate(participants):
             task_path = tasks_paths[i % len(tasks_paths)]
             await send_task_image(bot, telegram_id, task_path)
-

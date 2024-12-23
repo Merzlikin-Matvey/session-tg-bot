@@ -1,5 +1,6 @@
 from src.database.models import User, Exam, SessionLocal
 
+
 class DatabaseAdapter:
     def __init__(self):
         self.db = SessionLocal()

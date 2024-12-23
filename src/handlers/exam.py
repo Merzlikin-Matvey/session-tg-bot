@@ -7,6 +7,7 @@ from src.forms import Form
 
 router = Router()
 
+
 @router.message(Command('exam_list'))
 async def exam_list_command(message: types.Message):
     exams = Exam.get_all_exams()
@@ -81,7 +82,7 @@ async def process_examiner_number(message: types.Message, state: FSMContext):
         if 1 <= examiner_number <= len(exam.examiners):
             examiner_id = exam.examiners[examiner_number - 1]
             await send_consultation_request(message.bot, examiner_id, message.from_user.id, message.from_user.full_name)
-            await message.reply(f"Запрос на консультацию отправлен экзаменатору.")
+            await message.reply("Запрос на консультацию отправлен экзаменатору.")
             await state.clear()
         else:
             await message.reply("Неверный номер экзаменатора. Пожалуйста, попробуйте снова.")

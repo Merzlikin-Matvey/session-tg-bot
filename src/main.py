@@ -20,6 +20,7 @@ dp.include_router(exam.router)
 
 scheduler = AsyncIOScheduler()
 
+
 async def main():
     print("Bot started")
     scheduler.start()

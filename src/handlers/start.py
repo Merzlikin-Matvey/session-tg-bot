@@ -6,6 +6,7 @@ from src.forms import Form
 
 router = Router()
 
+
 @router.message(Command('start'))
 async def send_welcome(message: types.Message, state: FSMContext):
     print("УРАААА")
@@ -16,6 +17,7 @@ async def send_welcome(message: types.Message, state: FSMContext):
         await state.set_state(Form.awaiting_full_name)
     else:
         await message.reply("Привет! Добро пожаловать в нашего бота")
+
 
 @router.message(Form.awaiting_full_name)
 async def process_full_name(message: types.Message, state: FSMContext):
