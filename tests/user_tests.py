@@ -1,5 +1,6 @@
 import unittest
 import sys
+import time
 sys.path.append('./')
 from src.objects.user import User
 
@@ -8,7 +9,7 @@ from src.objects.user import User
 class UserTests(unittest.TestCase):
     def test_creating(self):
         try:
-            user = User(123456789)
+            user = User(int(time.time()))
             self.assertIsNotNone(user)
         except:
             self.fail("Не создается :(")
@@ -22,8 +23,7 @@ class UserTests(unittest.TestCase):
         exams = user.get_all_exams()
         self.assertIsNotNone(exams)
 
-    def test_add(self):
-        pass # что такое этот ваш адд?
+    
 
 
 if __name__ == "__main__":
