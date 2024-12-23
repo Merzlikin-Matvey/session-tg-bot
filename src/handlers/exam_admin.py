@@ -62,41 +62,55 @@ async def edit_exam(callback_query: types.CallbackQuery, state: FSMContext):
             for i in range(len(exams)):
                 response += f"{i + 1}. Название: {exams[i].name}, Дата и время: {exams[i].timestamp}\n"
             response += "\nНапишите номер экзамена, который хотите изменить."
-            await message.edit_text(response)
-            await state.set_state(Form.join_exam_num)
+            await message.edit_text(response, reply_markup=admin_create_exam_keyboard)
+            await state.set_state(Form.edit_exam_num)
+            state = await state.get_state()
+            print("State", state)
         else:
             await message.edit_text("Нет доступных экзаменов")
     except:
         await message.edit_text("Нет доступных экзаменов")
 
-@router.message(lambda message: message.text and message.text.startswith('/add_tasks_'))
-async def add_tasks_command(message: types.Message, state: FSMContext):
-    command = message.text
-    exam_id = command.split('_')[-1]
-    telegram_id = message.from_user.id
+
+@router.message(Form.edit_exam_num)
+async def process_exam_datetime(message: types.Message, state: FSMContext):
+    exam_num = int(message.text)
+    exams = Exam.get_all_exams()
+    if exam_num < 1 or exam_num > len(exams):
+        await message.edit_text("Неверный номер экзамена.")
+        return
+    exam_id = exams[exam_num - 1].id
+    await state.update_data(exam_id=exam_id)
+    # Если уже в комиссии, показываем другую клавиатуру
+    await message.answer("Выберите действие:", reply_markup=admin_edit_exam_keyboard_1)
+
+@router.callback_query(lambda c: c.data == 'add_task')
+async def add_tasks_command(callback_query: types.CallbackQuery, state: FSMContext):
+    telegram_id = callback_query.from_user.id
     user = User(telegram_id)
     if user.is_admin:
-        await state.update_data(exam_id=exam_id)
-        await message.reply("Пожалуйста, отправьте архив,сжатую папку или изображения с задачами для экзамена:")
+        message = callback_query.message
+        await message.edit_text("Пожалуйста, отправьте архив, сжатую папку или изображения с задачами для экзамена:")
+        sent_message = await message.answer("Отправляйте ваши файлы и нажмите 'Достаточно!', когда закончите", reply_markup=admin_task_keyboard)
+        await state.update_data(message_id=sent_message.message_id)
         await state.set_state(Form.awaiting_task_image)
     else:
-        await message.reply("У вас нет прав для добавления задач.")
+        await callback_query.message.reply("У вас нет прав для добавления задач.")
 
 
 @router.message(Form.awaiting_task_image)
 async def process_task_image(message: types.Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
-    print(data)
     exam_id = data['exam_id']
+    message_id = data.get('message_id')
+    files_received = data.get('files_received', 0)
 
     if message.content_type == types.ContentType.PHOTO:
         photo = message.photo[-1]
         save_path = await save_task_image(bot, photo.file_id, exam_id)
-        print(save_path)
         exam = Exam.get_exam_by_id(exam_id)
         exam.add_task(save_path)
-
-        await message.reply(f"Изображение с задачами успешно добавлено! Сохранено как {save_path}")
+        files_received += 1
 
     elif message.content_type == types.ContentType.DOCUMENT:
         if '.pdf' in message.document.file_name:
@@ -106,21 +120,38 @@ async def process_task_image(message: types.Message, state: FSMContext, bot: Bot
         elif '.rar' in message.document.file_name:
             save_path = await save_task_rar(bot, message.document.file_id, exam_id)
         else:
-            await message.reply("Неподдерживаемый формат файла.")
             return
 
         exam = Exam.get_exam_by_id(exam_id)
         if isinstance(save_path, str):
             save_path = [save_path]
-            exam.add_task(save_path)
-        else:
-            for i in save_path:
-                exam.add_task(i)
-        await message.reply(f"Файл с задачами успешно добавлен! Сохранено как {",".join(save_path)}")
+        for path in save_path:
+            exam.add_task(path)
+        files_received += len(save_path)
 
     else:
-        await message.reply("Добавление задач завершено.")
         await state.clear()
+        await message.answer("Добавление задач завершено.", reply_markup=types.ReplyKeyboardRemove())
+        exams = Exam.get_all_exams()
+        if exams:
+            response = "Список доступных экзаменов:\n\n"
+            for i in range(len(exams)):
+                response += f"{i + 1}. Название: {exams[i].name}, Дата и время: {exams[i].timestamp}\n"
+            response += "\nНапишите номер экзамена, который хотите изменить."
+            await message.answer(response, reply_markup=admin_create_exam_keyboard)
+            await state.set_state(Form.edit_exam_num)
+        else:
+            await message.answer("Нет доступных экзаменов")
+
+        return
+
+    await state.update_data(files_received=files_received)
+    # TODO! Сломалось
+    # await bot.edit_message_text(
+    #     chat_id=message.chat.id,
+    #     message_id=message_id,
+    #     text=f"Пожалуйста, отправьте архив, сжатую папку или изображения с задачами для экзамена:\n\nПолучено файлов: {files_received}"
+    # )
 
 
 @router.message(lambda message: message.text and message.text.startswith('/add_examiner_'))
