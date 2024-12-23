@@ -26,6 +26,9 @@ class Exam(Base):
         self.started = started
         print('create')
 
+    def __str__(self):
+        return f"Exam {self.name} ({self.timestamp}) {self.participants} {self.examiners}"
+
     @staticmethod
     def get_exam_by_id(exam_id):
         adapter = DatabaseAdapter()
@@ -55,9 +58,7 @@ class Exam(Base):
             self.adapter = DatabaseAdapter()
         return self.adapter.db.query(Exam).filter(Exam.name == self.name).first() is not None
 
-
     def save(self):
-        print(self.exists())
         if self.exists():
             self.adapter.db.query(Exam).filter(Exam.name == self.name).update(
                 {
@@ -79,26 +80,29 @@ class Exam(Base):
         self.save()
 
     def add_participant(self, telegram_id):
-        print('======================')
-        print(telegram_id, self.participants)
+        telegram_id = str(telegram_id)
         if telegram_id not in self.participants:
             self.participants.append(telegram_id)
             self.save()
 
     def remove_participant(self, telegram_id):
+        telegram_id = str(telegram_id)
         if telegram_id in self.participants:
             self.participants.remove(telegram_id)
             self.save()
 
     def add_examiner(self, telegram_id):
+        telegram_id = str(telegram_id)
         if telegram_id not in self.examiners:
             self.examiners.append(telegram_id)
             self.save()
 
     def is_examiner(self, telegram_id):
+        telegram_id = str(telegram_id)
         return telegram_id in self.examiners
 
     def is_student_assigned(self, student_id):
+        student_id = str(student_id)
         return self.adapter.db.query(Exam).filter(Exam.participants.any(student_id), Exam.examiners.any()).first() is not None
 
     def assign_student_to_examiner(self, student_id, examiner_id):

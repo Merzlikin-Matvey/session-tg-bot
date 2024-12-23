@@ -57,38 +57,33 @@ async def leave_exam(callback_query: types.CallbackQuery):
     user.set_registered_exam(None)
     await message.edit_text(f"Вы успешно покинули экзамен {exam.name}", reply_markup=user_main_menu_keyboard)
 
-@router.message(lambda message: message.text and message.text.startswith('/request_consultation_'))
-async def request_consultation_command(message: types.Message, state: FSMContext):
-    command = message.text
-    exam_id = int(command.split('_')[-1])
-    exam = Exam.get_exam_by_id(exam_id)
+@router.callback_query(lambda c: c.data == 'request_consultation') 
+async def request_consultation(callback_query: types.CallbackQuery, state: FSMContext):
+    await callback_query.answer()
+    message = callback_query.message
+    telegram_id = callback_query.from_user.id
+    user = User(telegram_id)
+    exam = Exam.get_exam_by_id(user.get_registered_exam())
     if exam:
-        if not exam.examiners:
-            await message.reply("Нет доступных экзаменаторов для консультации.")
-            return
-
-        response = "Список доступных экзаменаторов:\n"
-        for idx, examiner_id in enumerate(exam.examiners, start=1):
-            examiner = User(examiner_id)
-            response += f"{idx}. {examiner.name} (ID: {examiner_id})\n"
-        response += "Введите номер экзаменатора для запроса консультации:"
-        await message.reply(response)
-        await state.update_data(exam_id=exam_id)
-        await state.set_state(Form.awaiting_examiner_number)
+        if exam.examiners:
+            response = "Список доступных экзаменаторов:\n"
+            for idx, examiner_id in enumerate(exam.examiners, start=1):
+                examiner = User(examiner_id)
+                response += f"{idx}. {examiner.name}\n"
+            response += "Введите номер экзаменатора для запроса консультации:"
+            await message.edit_text(response)
+            await state.update_data(exam_id=exam.id)
+            await state.set_state(Form.awaiting_examiner_number)
+        else:
+            await message.edit_text("Нет доступных экзаменаторов для консультации.", reply_markup=user_exam_keyboard)
     else:
         await message.reply("Экзамен не найден.")
 
-
 async def send_consultation_request(bot: Bot, examiner_id, requester_id, requester_name):
-    keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
-        [types.InlineKeyboardButton(text="Принять", callback_data=f"accept_consultation:{requester_id}")],
-        [types.InlineKeyboardButton(text="Отклонить", callback_data=f"decline_consultation:{requester_id}")]
-    ])
-
     await bot.send_message(
         examiner_id,
         f"Пользователь {requester_name} запрашивает консультацию. Принять или отклонить?",
-        reply_markup=keyboard
+        reply_markup=admin_exam_keyboard
     )
 
 
@@ -103,10 +98,10 @@ async def process_examiner_number(message: types.Message, state: FSMContext):
         if 1 <= examiner_number <= len(exam.examiners):
             examiner_id = exam.examiners[examiner_number - 1]
             await send_consultation_request(message.bot, examiner_id, message.from_user.id, message.from_user.full_name)
-            await message.reply("Запрос на консультацию отправлен экзаменатору.")
+            await message.answer("Запрос на консультацию отправлен экзаменатору.", reply_markup=user_exam_keyboard)
             await state.clear()
         else:
-            await message.reply("Неверный номер экзаменатора. Пожалуйста, попробуйте снова.")
+            await message.answer("Неверный номер экзаменатора. Пожалуйста, попробуйте снова.")
     except ValueError as e:
         print(e)
         await message.reply("Пожалуйста, введите корректный номер экзаменатора.")
