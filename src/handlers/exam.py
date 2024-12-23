@@ -4,6 +4,8 @@ from aiogram.fsm.context import FSMContext
 from src.objects.exam import Exam
 from src.objects.user import User
 from src.forms import Form
+from src.keyboards.user_keyboards import *
+from src.keyboards.admin_keyboards import *
 
 router = Router()
 
@@ -13,53 +15,48 @@ async def join_exam_list(callback_query: types.CallbackQuery, state: FSMContext)
     await state.clear()
     await callback_query.answer()
     message = callback_query.message
-    exams = Exam.get_all_exams()
-    if exams:
-        response = "Список доступных экзаменов:\n\n"
-        for i in range(len(exams)):
-            response += f"{i + 1}. Название: {exams[i].name}, Дата и время: {exams[i].timestamp}\n"
-        response += "\nНапишите номер экзамена, к которому хотите присоединиться."
-        await message.edit_text(response)
-        await state.set_state(Form.join_exam_num)
-    else:
+    try:
+        exams = Exam.get_all_exams()
+        if exams:
+            response = "Список доступных экзаменов:\n\n"
+            for i in range(len(exams)):
+                response += f"{i + 1}. Название: {exams[i].name}, Дата и время: {exams[i].timestamp}\n"
+            response += "\nНапишите номер экзамена, к которому хотите присоединиться."
+            await message.edit_text(response)
+            await state.set_state(Form.join_exam_num)
+        else:
+            await message.edit_text("Нет доступных экзаменов")
+    except:
         await message.edit_text("Нет доступных экзаменов")
 
 @router.message(Form.join_exam_num)
 async def join_exam(message: types.Message, state: FSMContext):
     text = message.text
-    exams = Exam.get_all_exams()
-    if (not text.isdigit()) or int(text) > len(exams):
-        await message.answer("Экзамен не найден.")
-    exam_id = exams[int(text) - 1].id
-    telegram_id = message.from_user.id
-    exam = Exam.get_exam_by_id(exam_id)
-    if str(telegram_id) in exam.participants:
-        await message.answer("Вы уже присоединились к этому экзамену.")
-    else:
-        exam.add_participant(str(telegram_id))
-        await message.answer(f"Вы успешно присоединились к экзамену {exam.name}!")
-
-@router.message(lambda message: message.text and message.text.startswith('/join_exam_'))
-async def join_exam_command(message: types.Message, state: FSMContext):
-    command = message.text
-    exam_id = int(command.split('_')[-1])
     telegram_id = message.from_user.id
     user = User(telegram_id)
-
-    if user.get_registered_exam():
-        await message.reply("Вы уже зарегистрированы на другой экзамен. Сначала выйдите из текущего экзамена.")
-        return
-
-    exam = Exam.get_exam_by_id(exam_id)
-    if exam:
-        if str(telegram_id) in exam.participants:
-            await message.reply("Вы уже присоединились к этому экзамену")
-        else:
-            exam.add_participant(str(telegram_id))
-            user.set_registered_exam(exam_id)
-            await message.reply("Вы успешно присоединились к экзамену!")
+    print('=====================================================================================================================================================================================================================================================================================')
+    exams = Exam.get_all_exams()
+    if (not text.isdigit()) or int(text) > len(exams):
+        await message.answer("Экзамен не найден")
     else:
-        await message.reply("Экзамен не найден.")
+        await state.clear()
+        exam_id = exams[int(text) - 1].id
+        telegram_id = message.from_user.id
+        exam = Exam.get_exam_by_id(exam_id)
+        exam.add_participant(str(telegram_id))
+        user.set_registered_exam(exam_id)
+        await message.answer(f"Вы успешно присоединились к экзамену {exam.name}", reply_markup=user_leave_exam_keyboard)
+
+@router.callback_query(lambda c: c.data == 'leave_exam') 
+async def leave_exam(callback_query: types.CallbackQuery):
+    await callback_query.answer()
+    message = callback_query.message
+    telegram_id = message.from_user.id
+    user = User(telegram_id)
+    exam = Exam.get_exam_by_id(user.registered_exam_id)
+    exam.remove_participant(telegram_id)
+    user.set_registered_exam(None)
+    await message.edit_text(f"Вы успешно покинули экзамен {exam.name}", reply_markup=user_main_menu_keyboard)
 
 @router.message(Command('leave_all_exams'))
 async def leave_all_exams_command(message: types.Message):
