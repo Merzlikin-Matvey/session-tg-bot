@@ -10,9 +10,11 @@ class User:
         if user_info:
             self.name = user_info.full_name
             self.is_admin = user_info.is_admin
+            self.registered_exam_id = user_info.registered_exam_id
         else:
             self.name = None
             self.is_admin = False
+            self.registered_exam_id = None
 
     def exists(self):
         return self.adapter.user_exists(self.id)
@@ -32,3 +34,10 @@ class User:
 
     def get_all_exams(self):
         return self.adapter.get_all_exams()
+
+    def set_registered_exam(self, exam_id):
+        self.adapter.set_user_exam(self.id, exam_id)
+        self.registered_exam_id = exam_id
+
+    def get_registered_exam(self):
+        return self.registered_exam_id

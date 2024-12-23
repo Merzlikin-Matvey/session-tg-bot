@@ -26,3 +26,7 @@ class DatabaseAdapter:
 
     def get_all_exams(self):
         return self.db.query(Exam).all()
+
+    def set_user_exam(self, telegram_id, exam_id):
+        self.db.query(User).filter(User.telegram_id == str(telegram_id)).update({"registered_exam_id": exam_id})
+        self.db.commit()

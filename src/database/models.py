@@ -14,6 +14,7 @@ class User(Base):
     telegram_id = Column(String, primary_key=True)
     full_name = Column(String)
     is_admin = Column(Boolean, default=False)
+    registered_exam_id = Column(Integer, nullable=True)
 
 
 class Exam(Base):
