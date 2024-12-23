@@ -1,4 +1,4 @@
-# Итак, это наше иновационное решение для сессий школы 58 
+# Иновационный бот для сессий
 В нашем боте реализованы все современные стандарты разработки: наличие тестов, CI/CD, postgres и многое другое.
 
 # Что тут будет?
@@ -68,15 +68,6 @@ python -m src
       started      boolean,
       examiners    text[]
   );
-  
-  alter table exams
-      owner to postgres;
-  
-  create index ix_exams_id
-      on exams (id);
-  
-  create index ix_exams_name
-      on exams (name);
   ```
 - таблица пользователей:
   ```sql
@@ -88,11 +79,11 @@ python -m src
       is_admin           boolean,
       registered_exam_id integer
   );
-  
-  alter table users
-      owner to postgres;
   ```
 
+
+## Тестирование
+В нашем проекте есть тесты, которые находятся в папке ```tests```. В дальнейшем они будут использоваться в CI/CD.
 
 
 ## CI-CD
@@ -101,7 +92,5 @@ python -m src
 
 
 
-## Тестирование
-В нашем проекте есть тесты, которые находятся в папке ```tests```. В дальнейшем они будут использоваться в CI/CD.
-
 ## Разработчики:
+### Матвей,Лев,Алексей
