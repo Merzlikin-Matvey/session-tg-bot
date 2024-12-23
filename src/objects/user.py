@@ -17,6 +17,9 @@ class User:
             self.is_admin = False
             self.registered_exam_id = None
 
+    def __str__(self):
+        return f"User: {self.id}, {self.name}, {self.is_admin}, {self.registered_exam_id}"
+
     def exists(self):
         return self.adapter.user_exists(self.id)
 

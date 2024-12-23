@@ -55,7 +55,6 @@ class Exam(Base):
             self.adapter = DatabaseAdapter()
         return self.adapter.db.query(Exam).filter(Exam.name == self.name).first() is not None
 
-
     def save(self):
         if self.exists():
             self.adapter.db.query(Exam).filter(Exam.name == self.name).update(

@@ -6,6 +6,6 @@ admin_main_menu_keyboard = InlineKeyboardMarkup(inline_keyboard=[
 ])
 
 admin_exam_keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-    InlineKeyboardButton(text="Принять", callback_data="accept_concultation"), 
+    InlineKeyboardButton(text="Принять", callback_data="accept_concultation"),
     InlineKeyboardButton(text="Отклонить", callback_data="decline_consultation")
 ]])

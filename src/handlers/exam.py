@@ -34,7 +34,8 @@ async def join_exam(message: types.Message, state: FSMContext):
     text = message.text
     telegram_id = message.from_user.id
     user = User(telegram_id)
-    print('=====================================================================================================================================================================================================================================================================================')
+    print("User add", telegram_id)
+    print(user)
     exams = Exam.get_all_exams()
     if (not text.isdigit()) or int(text) > len(exams):
         await message.answer("Экзамен не найден")
@@ -47,16 +48,21 @@ async def join_exam(message: types.Message, state: FSMContext):
         user.set_registered_exam(exam_id)
         await message.answer(f"Вы успешно присоединились к экзамену {exam.name}", reply_markup=user_leave_exam_keyboard)
 
-@router.callback_query(lambda c: c.data == 'leave_exam') 
+@router.callback_query(lambda c: c.data == 'leave_exam')
 async def leave_exam(callback_query: types.CallbackQuery):
     await callback_query.answer()
-    message = callback_query.message
-    telegram_id = message.from_user.id
+    telegram_id = callback_query.from_user.id
     user = User(telegram_id)
+    print("User leave", telegram_id)
+    print(user)
+
     exam = Exam.get_exam_by_id(user.registered_exam_id)
-    exam.remove_participant(telegram_id)
-    user.set_registered_exam(None)
-    await message.edit_text(f"Вы успешно покинули экзамен {exam.name}", reply_markup=user_main_menu_keyboard)
+    if exam:
+        exam.remove_participant(telegram_id)
+        user.set_registered_exam(None)
+        await callback_query.message.edit_text(f"Вы успешно покинули экзамен {exam.name}", reply_markup=user_main_menu_keyboard)
+    else:
+        await callback_query.message.edit_text("Экзамен не найден")
 
 @router.message(Command('leave_all_exams'))
 async def leave_all_exams_command(message: types.Message):

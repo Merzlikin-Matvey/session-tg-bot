@@ -5,7 +5,7 @@ from datetime import datetime
 from src.objects.user import User
 from src.objects.exam import Exam
 from src.forms import Form
-from src.tasks.save import save_task_image
+from src.tasks.save import save_task_image, save_task_pdf, save_task_zip, save_task_rar
 from aiogram import Bot
 
 router = Router()
@@ -63,21 +63,38 @@ async def add_tasks_command(message: types.Message, state: FSMContext):
 
 @router.message(Form.awaiting_task_image)
 async def process_task_image(message: types.Message, state: FSMContext, bot: Bot):
+    data = await state.get_data()
+    print(data)
+    exam_id = data['exam_id']
+
     if message.content_type == types.ContentType.PHOTO:
         photo = message.photo[-1]
-        data = await state.get_data()
-        print(data)
-        exam_id = data['exam_id']
-
         save_path = await save_task_image(bot, photo.file_id, exam_id)
 
         exam = Exam.get_exam_by_id(exam_id)
         exam.add_task(save_path)
 
         await message.reply(f"Изображение с задачами успешно добавлено! Сохранено как {save_path}")
-        await state.clear()
+
+    elif message.content_type == types.ContentType.DOCUMENT:
+        if '.pdf' in message.document.file_name:
+            save_path = await save_task_pdf(bot, message.document.file_id, exam_id)
+        elif '.zip' in message.document.file_name:
+            save_path = await save_task_zip(bot, message.document.file_id, exam_id)
+        elif '.rar' in message.document.file_name:
+            save_path = await save_task_rar(bot, message.document.file_id, exam_id)
+        else:
+            await message.reply("Неподдерживаемый формат файла.")
+            return
+
+        exam = Exam.get_exam_by_id(exam_id)
+        exam.add_task(save_path)
+
+        await message.reply(f"Файл с задачами успешно добавлен! Сохранено как {save_path}")
+
     else:
-        await message.reply("Пожалуйста, отправьте изображение.")
+        await message.reply("Добавление задач завершено.")
+        await state.clear()
 
 
 @router.message(lambda message: message.text and message.text.startswith('/add_examiner_'))
