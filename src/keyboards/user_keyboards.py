@@ -1,6 +1,10 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 user_main_menu_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="Добавить экзамен", callback_data="add_exam")],
-    [InlineKeyboardButton(text="Все экзамены", callback_data="exam_list")]
+    [InlineKeyboardButton(text="Присоединиться к экзамену", callback_data="join_exam")]
+])
+
+user_exam_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="Готов отвечать", callback_data="student_ready")],
+    [InlineKeyboardButton(text="Запросить консультацию", callback_data="request_consultation")]
 ])
