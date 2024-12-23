@@ -10,7 +10,7 @@ from src.keyboards.admin_keyboards import *
 router = Router()
 
 
-@router.callback_query(lambda c: c.data == 'join_exam') 
+@router.callback_query(lambda c: c.data == 'join_exam')
 async def join_exam_list(callback_query: types.CallbackQuery, state: FSMContext):
     await state.clear()
     await callback_query.answer()
@@ -26,8 +26,9 @@ async def join_exam_list(callback_query: types.CallbackQuery, state: FSMContext)
             await state.set_state(Form.edit_exam_num)
         else:
             await message.edit_text("Нет доступных экзаменов")
-    except:
+    except Exception as e:
         await message.edit_text("Нет доступных экзаменов")
+
 
 @router.message(Form.join_exam_num)
 async def join_exam(message: types.Message, state: FSMContext):
@@ -46,7 +47,8 @@ async def join_exam(message: types.Message, state: FSMContext):
         user.set_registered_exam(exam_id)
         await message.answer(f"Вы успешно присоединились к экзамену {exam.name}", reply_markup=user_leave_exam_keyboard)
 
-@router.callback_query(lambda c: c.data == 'leave_exam') 
+
+@router.callback_query(lambda c: c.data == 'leave_exam')
 async def leave_exam(callback_query: types.CallbackQuery):
     await callback_query.answer()
     message = callback_query.message
@@ -56,6 +58,7 @@ async def leave_exam(callback_query: types.CallbackQuery):
     exam.remove_participant(telegram_id)
     user.set_registered_exam(None)
     await message.edit_text(f"Вы успешно покинули экзамен {exam.name}", reply_markup=user_main_menu_keyboard)
+
 
 @router.callback_query(lambda c: c.data == 'request_consultation')
 async def handle_ready_to_answer(callback_query: types.CallbackQuery, state: FSMContext):
@@ -78,6 +81,7 @@ async def handle_ready_to_answer(callback_query: types.CallbackQuery, state: FSM
     else:
         await message.edit_text("Экзамен не найден.", reply_markup=user_exam_keyboard)
 
+
 async def send_consultation_request(bot: Bot, examiner_id, requester_id, requester_name):
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=[[
         types.InlineKeyboardButton(text="Принять", callback_data=f"accept_consultation:{requester_id}"),
@@ -89,6 +93,7 @@ async def send_consultation_request(bot: Bot, examiner_id, requester_id, request
         f"Пользователь {requester_name} запрашивает консультацию. Принять или отклонить?",
         reply_markup=keyboard
     )
+
 
 @router.message(Form.awaiting_examiner_number)
 async def process_examiner_number(message: types.Message, state: FSMContext):
@@ -123,6 +128,7 @@ async def accept_consultation(callback_query: types.CallbackQuery, state: FSMCon
     await bot.edit_message_text(chat_id=student_id, text=f"Ваш запрос на консультацию принят экзаменатором {examiner.name}.", reply_markup=user_exam_keyboard, message_id=callback_query.message.message_id)
     await bot.edit_message_text(chat_id=examiner_id, text=f"Вы приняли запрос на консультацию от {student.name}.", message_id=callback_query.message.message_id)
 
+
 @router.callback_query(lambda c: c.data.startswith("decline_consultation"))
 async def decline_consultation(callback_query: types.CallbackQuery, state: FSMContext, bot: Bot):
     await callback_query.answer()
@@ -133,8 +139,13 @@ async def decline_consultation(callback_query: types.CallbackQuery, state: FSMCo
     student = User(student_id)
     examiner = User(examiner_id)
 
-    await bot.edit_message_text(chat_id=student_id, text=f"Ваш запрос на консультацию отклонен экзаменатором {examiner.name}.", reply_markup=user_exam_keyboard,message_id=callback_query.message.message_id)
-    await bot.edit_message_text(chat_id=examiner_id, text=f"Вы отклонили запрос на консультацию от {student.name}.", message_id=callback_query.message.message_id)
+    await bot.edit_message_text(chat_id=student_id,
+                                text=f"Ваш запрос на консультацию отклонен экзаменатором {examiner.name}.",
+                                reply_markup=user_exam_keyboard, message_id=callback_query.message.message_id)
+    await bot.edit_message_text(chat_id=examiner_id,
+                                text=f"Вы отклонили запрос на консультацию от {student.name}.",
+                                message_id=callback_query.message.message_id)
+
 
 @router.callback_query(lambda c: c.data.startswith("accept_student"))
 async def handle_accept_student(callback_query: types.CallbackQuery, state: FSMContext, bot: Bot):
@@ -164,6 +175,7 @@ async def handle_accept_student(callback_query: types.CallbackQuery, state: FSMC
 
     await callback_query.answer()
 
+
 async def send_ready_notification(bot: Bot, examiner_id, student_id, student_name, exam_id):
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
         [types.InlineKeyboardButton(text="Принять", callback_data=f"accept_student:{student_id}:{exam_id}")]
@@ -176,7 +188,6 @@ async def send_ready_notification(bot: Bot, examiner_id, student_id, student_nam
     )
 
     return message.message_id
-
 
 
 @router.message(lambda message: message.text == "Готов отвечать")

@@ -6,14 +6,13 @@ from src.objects.user import User
 from src.objects.exam import Exam
 from src.forms import Form
 from src.tasks.save import save_task_image, save_task_pdf, save_task_zip, save_task_rar
-from src.keyboards.user_keyboards import *
 from src.keyboards.admin_keyboards import *
 from aiogram import Bot
 
 router = Router()
 
 
-@router.callback_query(lambda c: c.data == 'add_exam') 
+@router.callback_query(lambda c: c.data == 'add_exam')
 async def add_exam_command(callback_query: types.CallbackQuery, state: FSMContext):
     telegram_id = callback_query.from_user.id
     callback_query.answer()
@@ -50,6 +49,7 @@ async def process_exam_datetime(message: types.Message, state: FSMContext):
         print(e)
         await message.reply("Неверный формат даты и времени. Пожалуйста, попробуйте снова (в формате ДД.ММ.ГГ ЧЧ:ММ):")
 
+
 @router.callback_query(lambda c: c.data == 'edit_exam')
 async def edit_exam(callback_query: types.CallbackQuery, state: FSMContext):
     await state.clear()
@@ -68,7 +68,7 @@ async def edit_exam(callback_query: types.CallbackQuery, state: FSMContext):
             print("State", state)
         else:
             await message.edit_text("Нет доступных экзаменов")
-    except:
+    except Exception as e:
         await message.edit_text("Нет доступных экзаменов")
 
 
@@ -83,6 +83,7 @@ async def process_exam_datetime(message: types.Message, state: FSMContext):
     await state.update_data(exam_id=exam_id)
     # Если уже в комиссии, показываем другую клавиатуру
     await message.answer("Выберите действие:", reply_markup=admin_edit_exam_keyboard_1)
+
 
 @router.callback_query(lambda c: c.data == 'add_task')
 async def add_tasks_command(callback_query: types.CallbackQuery, state: FSMContext):
