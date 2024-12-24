@@ -75,7 +75,7 @@ python -m src
   ```sql
   create table users
   (
-      telegram_id        varchar default nextval('users_telegram_id_seq'::regclass) not null
+      telegram_id        varchar default -1 not null
           primary key,
       full_name          varchar,
       is_admin           boolean,

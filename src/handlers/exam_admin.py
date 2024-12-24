@@ -13,15 +13,16 @@ from aiogram.types import FSInputFile
 
 router = Router()
 
+
 async def sort_upcoming_exams(exams):
-    current_time = datetime.strptime(str(datetime.now()),"%Y-%m-%d %H:%M:%S.%f")
+    current_time = datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f")
     upcoming_exams = [exam for exam in exams if datetime.strptime(str(exam.timestamp), "%Y-%m-%d %H:%M:%S").timestamp() >= current_time.timestamp()]
     return sorted(upcoming_exams, key=lambda exam: exam.timestamp)
 
 
-
 @router.callback_query(lambda c: c.data == 'add_exam')
 async def add_exam_command(callback_query: types.CallbackQuery, state: FSMContext):
+    print("GO")
     telegram_id = callback_query.from_user.id
     callback_query.answer()
     message = callback_query.message
@@ -194,7 +195,6 @@ async def add_examiner(message: types.Message):
         await message.reply("Произошла ошибка при добавлении экзаменатора.")
 
 
-
 @router.message(lambda message: message.text and message.text.startswith('/view_exam_tickets_'))
 async def view_exam_tickets(message: types.Message):
     try:
@@ -204,22 +204,17 @@ async def view_exam_tickets(message: types.Message):
         if not user.is_admin:
             await message.reply("У вас нет прав для выполнения этой команды.")
             return
-        
         else:
             exam_id = int(message.text.split('_')[3])
             exams = Exam.get_exam_by_id(exam_id)
             response = "Список учеников:\n\n"
             for i in range(len(exams.participants)):
                 user_id = exams.participants[i]
-                resposne += f"{i+1}.Имя: {User(user_id).name}. Айди:{user_id}. Для просмотра билета ученика напишите /view_ticket_{user_id}\n"
+                response += f"{i + 1}.Имя: {User(user_id).name}. Айди:{user_id}. Для просмотра билета ученика напишите /view_ticket_{user_id}\n"
             await message.reply(response)
-                
-                
-
     except Exception as e:
         print(e)
         await message.reply("Произошла ошибка при просмотре билетов экзамена.")
-
 
 
 @router.message(lambda message: message.text and message.text.startswith('/view_ticket_'))
