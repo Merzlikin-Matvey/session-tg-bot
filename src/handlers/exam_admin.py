@@ -12,16 +12,14 @@ from src.keyboards.admin_keyboards import *
 from aiogram import Bot
 from aiogram.types import FSInputFile
 
-
 router = Router()
 adapter = DatabaseAdapter()
 
 
 @router.callback_query(lambda c: c.data == 'add_exam')
 async def add_exam_command(callback_query: types.CallbackQuery, state: FSMContext):
-    print("GO")
     telegram_id = callback_query.from_user.id
-    callback_query.answer()
+    await callback_query.answer()
     message = callback_query.message
     user = User(telegram_id)
     if user.is_admin:
@@ -70,8 +68,6 @@ async def edit_exam(callback_query: types.CallbackQuery, state: FSMContext):
             response += "\nНапишите номер экзамена, который хотите изменить."
             await message.edit_text(response)
             await state.set_state(Form.edit_exam_num)
-            state = await state.get_state()
-            print("State", state)
         else:
             await message.edit_text("Нет доступных экзаменов")
     except Exception as e:
@@ -89,13 +85,13 @@ async def process_exam_datetime(message: types.Message, state: FSMContext):
     exam = exams[exam_num - 1]
     await state.update_data(exam_id=exam.id)
     admin_edit_exam_keyboard_1 = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="Добавить задание", callback_data="add_task")],
-    [InlineKeyboardButton(text="Вступить в экзаменационную комиссию", callback_data=f"become_teacher_{exam.id}")]
-])
+        [InlineKeyboardButton(text="Добавить задание", callback_data="add_task")],
+        [InlineKeyboardButton(text="Вступить в экзаменационную комиссию", callback_data=f"become_teacher_{exam.id}")]
+    ])
     admin_edit_exam_keyboard_2 = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="Добавить задание", callback_data="add_task")],
-    [InlineKeyboardButton(text="Покинуть экзаменационную комиссию", callback_data=f"become_admin_{exam.id}")]
-])
+        [InlineKeyboardButton(text="Добавить задание", callback_data="add_task")],
+        [InlineKeyboardButton(text="Покинуть экзаменационную комиссию", callback_data=f"become_admin_{exam.id}")]
+    ])
     if examiner_id in exam.examiners:
         await message.answer("Выберите действие:", reply_markup=admin_edit_exam_keyboard_2)
     else:
@@ -171,9 +167,10 @@ async def process_task_image(message: types.Message, state: FSMContext, bot: Bot
     #     text=f"Пожалуйста, отправьте архив, сжатую папку или изображения с задачами для экзамена:\n\nПолучено файлов: {files_received}"
     # )
 
+
 @router.callback_query(lambda c: c.data.startswith('become_teacher'))
 async def become_teacher(callback_query: types.CallbackQuery):
-    callback_query.answer()
+    await callback_query.answer()
     message = callback_query.message
     try:
         telegram_id = callback_query.from_user.id
@@ -187,18 +184,19 @@ async def become_teacher(callback_query: types.CallbackQuery):
 
         exam.add_examiner(telegram_id)
         admin_edit_exam_keyboard_2 = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="Добавить задание", callback_data="add_task")],
-    [InlineKeyboardButton(text="Покинуть экзаменационную комиссию", callback_data=f"become_admin_{exam.id}")]
-])
+            [InlineKeyboardButton(text="Добавить задание", callback_data="add_task")],
+            [InlineKeyboardButton(text="Покинуть экзаменационную комиссию", callback_data=f"become_admin_{exam.id}")]
+        ])
         await message.edit_text(f"Вы добавлены в экзамен {exam.name} в качестве экзаменатора.", reply_markup=admin_edit_exam_keyboard_2)
 
     except Exception as e:
         print(e)
         await message.answer("Произошла ошибка при добавлении экзаменатора.")
 
+
 @router.callback_query(lambda c: c.data.startswith('become_admin'))
 async def become_teacher(callback_query: types.CallbackQuery):
-    callback_query.answer()
+    await callback_query.answer()
     message = callback_query.message
     try:
         telegram_id = callback_query.from_user.id
@@ -212,9 +210,9 @@ async def become_teacher(callback_query: types.CallbackQuery):
 
         exam.remove_examiner(telegram_id)
         admin_edit_exam_keyboard_1 = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="Добавить задание", callback_data="add_task")],
-    [InlineKeyboardButton(text="Вступить в экзаменационную комиссию", callback_data=f"become_teacher_{exam.id}")]
-])
+            [InlineKeyboardButton(text="Добавить задание", callback_data="add_task")],
+            [InlineKeyboardButton(text="Вступить в экзаменационную комиссию", callback_data=f"become_teacher_{exam.id}")]
+        ])
         await message.edit_text(f"Вы больше не экзаменатор в {exam.name}.", reply_markup=admin_edit_exam_keyboard_1)
 
     except Exception as e:

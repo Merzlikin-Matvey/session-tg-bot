@@ -24,6 +24,7 @@ class Exam(Base):
     timestamp = Column(DateTime)
     tasks_paths = Column(Text)
     participants = Column(ARRAY(String), default=[])
+    examiners = Column(ARRAY(String), default=[])
     started = Column(Boolean, default=False)
 
 

@@ -18,7 +18,6 @@ async def send_welcome(message: types.Message, state: FSMContext):
         await message.reply("Пожалуйста, введите фамилию и имя:")
         await state.set_state(Form.awaiting_full_name)
     else:
-        print(user.registered_exam_id)
         if user.is_admin:
             await message.answer(f"Привет, {user.name}! Добро пожаловать в нашего бота!", reply_markup=admin_main_menu_keyboard)
         else:

@@ -24,7 +24,6 @@ class Exam(Base):
         self.participants = participants
         self.examiners = examiners
         self.started = started
-        print('create')
 
     def __str__(self):
         return f"Exam {self.name} ({self.timestamp}) {self.participants} {self.examiners}"
@@ -43,6 +42,7 @@ class Exam(Base):
                 started=exam_data.started,
                 adapter=adapter
             )
+            exam.id = exam_data.id
             return exam
         return None
 
@@ -93,13 +93,13 @@ class Exam(Base):
 
     def add_examiner(self, telegram_id):
         telegram_id = str(telegram_id)
-        if telegram_id not in self.examiners:
+        if not (telegram_id in self.examiners):
             self.examiners.append(telegram_id)
             self.save()
-    
+
     def remove_examiner(self, telegram_id):
         telegram_id = str(telegram_id)
-        if telegram_id not in self.examiners:
+        if telegram_id in self.examiners:
             self.examiners.remove(telegram_id)
             self.save()
 
