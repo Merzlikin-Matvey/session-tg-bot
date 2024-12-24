@@ -5,7 +5,7 @@ user_main_menu_keyboard = InlineKeyboardMarkup(inline_keyboard=[
 ])
 
 user_exam_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="Готов отвечать", callback_data="studen_ready")],
+    [InlineKeyboardButton(text="Готов отвечать", callback_data="student_ready")],
     [InlineKeyboardButton(text="Запросить консультацию", callback_data="request_consultation")]
 ])
 

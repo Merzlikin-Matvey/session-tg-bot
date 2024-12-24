@@ -31,7 +31,7 @@ async def join_exam_list(callback_query: types.CallbackQuery, state: FSMContext)
                 response += f"{i + 1}. Название: {exams[i].name}, Дата и время: {exams[i].timestamp}\n"
             response += "\nНапишите номер экзамена, к которому хотите присоединиться."
             await message.edit_text(response)
-            await state.set_state(Form.edit_exam_num)
+            await state.set_state(Form.join_exam_num)
         else:
             await message.edit_text("Нет доступных экзаменов")
     except Exception as e:
@@ -198,7 +198,7 @@ async def send_ready_notification(bot: Bot, examiner_id, student_id, student_nam
     return message.message_id
 
 
-@router.message(lambda message: message.text == "Готов отвечать")
+@router.callback_query(lambda c: c.data == "student_ready")
 async def ready_to_answer_command(message: types.Message, state: FSMContext):
     telegram_id = message.from_user.id
     user = User(telegram_id)
