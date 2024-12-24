@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from src.database.models import User, Exam, SessionLocal
 
 
@@ -26,6 +28,13 @@ class DatabaseAdapter:
 
     def get_all_exams(self):
         return self.db.query(Exam).all()
+
+    def get_available_exams(self):
+        exams = self.get_all_exams()
+        current_time = datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f")
+        upcoming_exams = [exam for exam in exams if datetime.strptime(str(exam.timestamp),
+                                                                      "%Y-%m-%d %H:%M:%S").timestamp() >= current_time.timestamp()]
+        return sorted(upcoming_exams, key=lambda exam: exam.timestamp)
 
     def set_user_exam(self, telegram_id, exam_id):
         self.db.query(User).filter(User.telegram_id == str(telegram_id)).update({"registered_exam_id": exam_id})

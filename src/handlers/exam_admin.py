@@ -2,6 +2,8 @@ from aiogram import types, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from datetime import datetime
+
+from src.database.db_adapter import DatabaseAdapter
 from src.objects.user import User
 from src.objects.exam import Exam
 from src.forms import Form
@@ -12,12 +14,7 @@ from aiogram.types import FSInputFile
 
 
 router = Router()
-
-
-async def sort_upcoming_exams(exams):
-    current_time = datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f")
-    upcoming_exams = [exam for exam in exams if datetime.strptime(str(exam.timestamp), "%Y-%m-%d %H:%M:%S").timestamp() >= current_time.timestamp()]
-    return sorted(upcoming_exams, key=lambda exam: exam.timestamp)
+adapter = DatabaseAdapter()
 
 
 @router.callback_query(lambda c: c.data == 'add_exam')
@@ -65,8 +62,7 @@ async def edit_exam(callback_query: types.CallbackQuery, state: FSMContext):
     await callback_query.answer()
     message = callback_query.message
     try:
-        exams = Exam.get_all_exams()
-        exams = await sort_upcoming_exams(exams)
+        exams = adapter.get_available_exams()
         if exams:
             response = "Список доступных экзаменов:\n\n"
             for i in range(len(exams)):
@@ -85,7 +81,7 @@ async def edit_exam(callback_query: types.CallbackQuery, state: FSMContext):
 @router.message(Form.edit_exam_num)
 async def process_exam_datetime(message: types.Message, state: FSMContext):
     exam_num = int(message.text)
-    exams = Exam.get_all_exams()
+    exams = adapter.get_available_exams()
     if exam_num < 1 or exam_num > len(exams):
         await message.edit_text("Неверный номер экзамена.")
         return
@@ -143,7 +139,7 @@ async def process_task_image(message: types.Message, state: FSMContext, bot: Bot
     else:
         await state.clear()
         await message.answer("Добавление задач завершено.", reply_markup=types.ReplyKeyboardRemove())
-        exams = Exam.get_all_exams()
+        exams = adapter.get_available_exams()
         if exams:
             response = "Список доступных экзаменов:\n\n"
             for i in range(len(exams)):

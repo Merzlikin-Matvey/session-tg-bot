@@ -3,18 +3,14 @@ from datetime import datetime
 from aiogram import types, Router, Bot
 from aiogram.fsm.context import FSMContext
 
+from src.database.db_adapter import DatabaseAdapter
 from src.objects.exam import Exam
 from src.objects.user import User
 from src.forms import Form
 from src.keyboards.user_keyboards import *
-from src.keyboards.admin_keyboards import *
 
 router = Router()
-
-async def sort_upcoming_exams(exams):
-    current_time = datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f")
-    upcoming_exams = [exam for exam in exams if datetime.strptime(str(exam.timestamp), "%Y-%m-%d %H:%M:%S").timestamp() >= current_time.timestamp()]
-    return sorted(upcoming_exams, key=lambda exam: exam.timestamp)
+adapter = DatabaseAdapter()
 
 
 @router.callback_query(lambda c: c.data == 'join_exam')
@@ -23,15 +19,14 @@ async def join_exam_list(callback_query: types.CallbackQuery, state: FSMContext)
     await callback_query.answer()
     message = callback_query.message
     try:
-        exams = Exam.get_all_exams()
-        exams = await sort_upcoming_exams(exams)
+        exams = adapter.get_available_exams()
         if exams:
             response = "Список доступных экзаменов:\n\n"
             for i in range(len(exams)):
                 response += f"{i + 1}. Название: {exams[i].name}, Дата и время: {exams[i].timestamp}\n"
             response += "\nНапишите номер экзамена, к которому хотите присоединиться."
             await message.edit_text(response)
-            await state.set_state(Form.edit_exam_num)
+            await state.set_state(Form.join_exam_num)
         else:
             await message.edit_text("Нет доступных экзаменов")
     except Exception as e:
@@ -43,7 +38,7 @@ async def join_exam(message: types.Message, state: FSMContext):
     text = message.text
     telegram_id = message.from_user.id
     user = User(telegram_id)
-    exams = Exam.get_all_exams()
+    exams = adapter.get_available_exams()
     if (not text.isdigit()) or int(text) > len(exams):
         await message.answer("Экзамен не найден")
     else:
