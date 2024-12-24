@@ -2,13 +2,14 @@ from datetime import datetime
 
 from aiogram import types, Router, Bot
 from aiogram.fsm.context import FSMContext
-
+import os
+from dotenv import load_dotenv
 from src.database.db_adapter import DatabaseAdapter
 from src.objects.exam import Exam
 from src.objects.user import User
 from src.forms import Form
 from src.keyboards.user_keyboards import *
-
+load_dotenv()
 router = Router()
 adapter = DatabaseAdapter()
 
@@ -62,33 +63,9 @@ async def leave_exam(callback_query: types.CallbackQuery):
     user.set_registered_exam(None)
     await message.edit_text(f"Вы успешно покинули экзамен {exam.name}", reply_markup=user_main_menu_keyboard)
 
-
-@router.callback_query(lambda c: c.data == 'request_consultation')
-async def handle_ready_to_answer(callback_query: types.CallbackQuery, state: FSMContext):
-    await callback_query.answer()
-    telegram_id = callback_query.from_user.id
-    message = callback_query.message
-    user = User(telegram_id)
-    exam = Exam.get_exam_by_id(user.get_registered_exam())
-    if exam:
-        if exam.examiners:
-            response = "Список доступных экзаменаторов:\n"
-            for idx, examiner_id in enumerate(exam.examiners, start=1):
-                examiner = User(examiner_id)
-                response += f"{idx}. {examiner.name}\n"
-            response += "Введите номер экзаменатора для запроса консультации:"
-            await message.edit_text(response)
-            await state.set_state(Form.awaiting_examiner_number)
-        else:
-            await message.edit_text("Нет доступных экзаменаторов для консультации.", reply_markup=user_exam_keyboard)
-    else:
-        await message.edit_text("Экзамен не найден.", reply_markup=user_exam_keyboard)
-
-
 async def send_consultation_request(bot: Bot, examiner_id, requester_id, requester_name):
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=[[
         types.InlineKeyboardButton(text="Принять", callback_data=f"accept_consultation:{requester_id}"),
-        types.InlineKeyboardButton(text="Отклонить", callback_data=f"decline_consultation:{requester_id}")
     ]])
 
     await bot.send_message(
@@ -98,24 +75,44 @@ async def send_consultation_request(bot: Bot, examiner_id, requester_id, request
     )
 
 
-@router.message(Form.awaiting_examiner_number)
-async def process_examiner_number(message: types.Message, state: FSMContext):
-    try:
-        examiner_number = int(message.text)
-        print(f"Выбранный номер экзаменатора: {examiner_number}")
-        telegram_id = message.from_user.id
-        user = User(telegram_id)
-        exam = Exam.get_exam_by_id(user.get_registered_exam())
-        if 1 <= examiner_number <= len(exam.examiners):
-            examiner_id = exam.examiners[examiner_number - 1]
-            await send_consultation_request(message.bot, examiner_id, message.from_user.id, message.from_user.full_name)
-            await message.answer("Запрос на консультацию отправлен экзаменатору.")
-            await state.clear()
+@router.message(lambda message: message.text == "Готов отвечать")
+async def ready_to_answer_command(message: types.Message, state: FSMContext):
+    telegram_id = message.from_user.id
+    user = User(telegram_id)
+    if user.exists():
+        if user.registered_exam_id:
+            exam = Exam.get_exam_by_id(user.registered_exam_id)
+            if exam and str(telegram_id) in exam.participants:
+                message_ids = []
+                for examiner_id in exam.examiners:
+                    message_id = await send_ready_notification(message.bot, examiner_id, telegram_id, user.name, user.registered_exam_id)
+                    message_ids.append((examiner_id, message_id))
+                await state.update_data(message_ids=message_ids)
+                await message.answer("Уведомление отправлено всем экзаменаторам.")
+            else:
+                await message.answer("Вы не участвуете в этом экзамене.")
         else:
-            await message.answer("Неверный номер экзаменатора. Пожалуйста, попробуйте снова.")
-    except ValueError as e:
-        print(e)
-        await message.answer("Пожалуйста, введите корректный номер экзаменатора.")
+            await message.answer("Вы не зарегистрированы на экзамен.")
+    else:
+        await message.answer("Вы не зарегистрированы в системе.")
+
+
+@router.message(lambda message: message.text == "Запросить консультацию")
+async def handle_ready_to_answer(message: types.Message, state: FSMContext):
+    telegram_id = message.from_user.id
+    user = User(telegram_id)
+    exam = Exam.get_exam_by_id(user.get_registered_exam())
+    bot = Bot(str(os.getenv("BOT_API_TOKEN")))
+    if exam:
+        if exam.examiners:
+            await message.answer("Вы запросили консультацию, ждите.", reply_markup=user_exam_reply_keyboard)
+            for i in exam.examiners:
+                await send_consultation_request(bot, i, telegram_id, message.from_user.full_name)
+        else:
+            await message.answer("Нет доступных экзаменаторов для консультации.", reply_markup=user_exam_reply_keyboard)
+    else:
+        await message.answer("Экзамен не найден.", reply_markup=user_exam_reply_keyboard)
+
 
 
 @router.callback_query(lambda c: c.data.startswith("accept_consultation"))
@@ -128,7 +125,7 @@ async def accept_consultation(callback_query: types.CallbackQuery, state: FSMCon
     student = User(student_id)
     examiner = User(examiner_id)
 
-    await bot.edit_message_text(chat_id=student_id, text=f"Ваш запрос на консультацию принят экзаменатором {examiner.name}.", reply_markup=user_exam_keyboard, message_id=callback_query.message.message_id)
+    await bot.send_message(chat_id=student_id, text=f"Ваш запрос на консультацию принят экзаменатором {examiner.name}.")
     await bot.edit_message_text(chat_id=examiner_id, text=f"Вы приняли запрос на консультацию от {student.name}.", message_id=callback_query.message.message_id)
 
 
@@ -144,7 +141,7 @@ async def decline_consultation(callback_query: types.CallbackQuery, state: FSMCo
 
     await bot.edit_message_text(chat_id=student_id,
                                 text=f"Ваш запрос на консультацию отклонен экзаменатором {examiner.name}.",
-                                reply_markup=user_exam_keyboard, message_id=callback_query.message.message_id)
+                                message_id=callback_query.message.message_id)
     await bot.edit_message_text(chat_id=examiner_id,
                                 text=f"Вы отклонили запрос на консультацию от {student.name}.",
                                 message_id=callback_query.message.message_id)
@@ -164,15 +161,7 @@ async def handle_accept_student(callback_query: types.CallbackQuery, state: FSMC
             student = User(student_id)
             examiner = User(examiner_id)
             await bot.send_message(examiner_id, f"Вы назначены персональным экзаменатором для ученика {student.name}.")
-            await bot.send_message(student_id, f"Вам назначен персональный экзаменатор {examiner.name}.", reply_markup=user_exam_keyboard)
-
-            data = await state.get_data()
-            message_ids = data.get('message_ids', [])
-            for ex_id, msg_id in message_ids:
-                if str(ex_id) != str(examiner_id):
-                    await bot.edit_message_text("Ученик уже назначен другому экзаменатору.", chat_id=ex_id, message_id=msg_id)
-                else:
-                    await bot.edit_message_text("Вы приняли ученика.", chat_id=ex_id, message_id=msg_id)
+            await bot.send_message(student_id, f"Вам назначен персональный экзаменатор {examiner.name}.")
     else:
         await bot.send_message(examiner_id, "Экзамен не найден.")
 
@@ -193,24 +182,31 @@ async def send_ready_notification(bot: Bot, examiner_id, student_id, student_nam
     return message.message_id
 
 
-@router.callback_query(lambda c: c.data == "student_ready")
-async def ready_to_answer_command(callback_query: types.CallbackQuery, state: FSMContext):
-    callback_query.answer()
-    telegram_id = callback_query.from_user.id
+@router.message(lambda message: message.text == "Покинуть экзамен")
+async def confirm_leave_exam(message: types.Message, state: FSMContext):
+    await message.answer("Вы уверены, что хотите покинуть экзамен?", reply_markup=confirm_leave_exam_keyboard_1)
+
+
+@router.message(lambda message: message.text == "Да, я уверен")
+async def confirm_leave_exam_step_2(message: types.Message, state: FSMContext):
+    await message.answer("Вы точно уверены, что хотите покинуть экзамен?", reply_markup=confirm_leave_exam_keyboard_2)
+
+
+@router.message(lambda message: message.text == "Нет, я передумал")
+async def cancel_leave_exam(message: types.Message, state: FSMContext):
+    await message.answer("Вы остались в экзамене.", reply_markup=user_exam_reply_keyboard)
+
+
+@router.message(lambda message: message.text == "Нет, я все же передумал")
+async def cancel_leave_exam(message: types.Message, state: FSMContext):
+    await message.answer("Вы остались в экзамене.", reply_markup=user_exam_reply_keyboard)
+
+
+@router.message(lambda message: message.text == "Да, я точно-точно уверен")
+async def leave_exam_final(message: types.Message, state: FSMContext):
+    telegram_id = message.from_user.id
     user = User(telegram_id)
-    if user.exists():
-        if user.registered_exam_id:
-            exam = Exam.get_exam_by_id(user.registered_exam_id)
-            if exam and str(telegram_id) in exam.participants:
-                message_ids = []
-                for examiner_id in exam.examiners:
-                    message_id = await send_ready_notification(callback_query.bot, examiner_id, telegram_id, user.name, user.registered_exam_id)
-                    message_ids.append((examiner_id, message_id))
-                await state.update_data(message_ids=message_ids)
-                await callback_query.message.edit_text("Уведомление отправлено всем экзаменаторам.", reply_markup=user_exam_keyboard)
-            else:
-                await callback_query.message.edit_text("Вы не участвуете в этом экзамене.", reply_markup=user_exam_keyboard)
-        else:
-            await callback_query.message.edit_text("Вы не зарегистрированы на экзамен.", reply_markup=user_exam_keyboard)
-    else:
-        await callback_query.message.edit_text("Вы не зарегистрированы в системе.", reply_markup=user_exam_keyboard)
+    exam = Exam.get_exam_by_id(user.registered_exam_id)
+    exam.remove_participant(telegram_id)
+    user.set_registered_exam(None)
+    await message.answer(f"Вы успешно покинули экзамен {exam.name}", reply_markup=user_main_menu_keyboard)
