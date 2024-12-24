@@ -36,13 +36,13 @@
 
 Для запуска нашего проекта вам нужно создать .env файл по образцу:
 ```
-BOT_API_TOKEN=7643599710:AAEz1o1jcelTobwk-ZZftdGbaO_B8KgoLhU
+BOT_API_TOKEN=
 
-DB_NAME=postgres
-DB_USER=postgres
-DB_PASSWORD=password
-DB_HOST=77.105.147.62
-DB_PORT=5432
+DB_NAME=
+DB_USER=
+DB_PASSWORD=
+DB_HOST=
+DB_PORT=
 ```
 После чего прописать в консоли следующие команды:
 ```shell
