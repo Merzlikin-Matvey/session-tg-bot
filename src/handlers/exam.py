@@ -164,7 +164,7 @@ async def handle_accept_student(callback_query: types.CallbackQuery, state: FSMC
             student = User(student_id)
             examiner = User(examiner_id)
             await bot.send_message(examiner_id, f"Вы назначены персональным экзаменатором для ученика {student.name}.")
-            await bot.send_message(student_id, f"Вам назначен персональный экзаменатор {examiner.name}.")
+            await bot.send_message(student_id, f"Вам назначен персональный экзаменатор {examiner.name}.", reply_markup=user_exam_keyboard)
 
             data = await state.get_data()
             message_ids = data.get('message_ids', [])
@@ -193,9 +193,10 @@ async def send_ready_notification(bot: Bot, examiner_id, student_id, student_nam
     return message.message_id
 
 
-@router.message(lambda message: message.text == "Готов отвечать")
-async def ready_to_answer_command(message: types.Message, state: FSMContext):
-    telegram_id = message.from_user.id
+@router.callback_query(lambda c: c.data == "student_ready")
+async def ready_to_answer_command(callback_query: types.CallbackQuery, state: FSMContext):
+    callback_query.answer()
+    telegram_id = callback_query.from_user.id
     user = User(telegram_id)
     if user.exists():
         if user.registered_exam_id:
@@ -203,13 +204,13 @@ async def ready_to_answer_command(message: types.Message, state: FSMContext):
             if exam and str(telegram_id) in exam.participants:
                 message_ids = []
                 for examiner_id in exam.examiners:
-                    message_id = await send_ready_notification(message.bot, examiner_id, telegram_id, user.name, user.registered_exam_id)
+                    message_id = await send_ready_notification(callback_query.bot, examiner_id, telegram_id, user.name, user.registered_exam_id)
                     message_ids.append((examiner_id, message_id))
                 await state.update_data(message_ids=message_ids)
-                await message.reply("Уведомление отправлено всем экзаменаторам.")
+                await callback_query.message.edit_text("Уведомление отправлено всем экзаменаторам.", reply_markup=user_exam_keyboard)
             else:
-                await message.reply("Вы не участвуете в этом экзамене.")
+                await callback_query.message.edit_text("Вы не участвуете в этом экзамене.", reply_markup=user_exam_keyboard)
         else:
-            await message.reply("Вы не зарегистрированы на экзамен.")
+            await callback_query.message.edit_text("Вы не зарегистрированы на экзамен.", reply_markup=user_exam_keyboard)
     else:
-        await message.reply("Вы не зарегистрированы в системе.")
+        await callback_query.message.edit_text("Вы не зарегистрированы в системе.", reply_markup=user_exam_keyboard)

@@ -15,6 +15,11 @@ from aiogram.types import FSInputFile
 router = Router()
 adapter = DatabaseAdapter()
 
+@router.callback_query(lambda c: c.data == 'admin_main_menu')
+async def admin_main_menu(callback_query: types.CallbackQuery):
+    await callback_query.answer()
+    message = callback_query.message
+    await message.edit_text(f"Выберите действие:", reply_markup=admin_main_menu_keyboard)
 
 @router.callback_query(lambda c: c.data == 'add_exam')
 async def add_exam_command(callback_query: types.CallbackQuery, state: FSMContext):
@@ -85,18 +90,40 @@ async def process_exam_datetime(message: types.Message, state: FSMContext):
     exam = exams[exam_num - 1]
     await state.update_data(exam_id=exam.id)
     admin_edit_exam_keyboard_1 = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Добавить задание", callback_data="add_task")],
-        [InlineKeyboardButton(text="Вступить в экзаменационную комиссию", callback_data=f"become_teacher_{exam.id}")]
+        [InlineKeyboardButton(text="Посмотреть задания", callback_data="see_tasks")],
+        [InlineKeyboardButton(text="Добавить задания", callback_data="add_task")],
+        [InlineKeyboardButton(text="Вступить в экзаменационную комиссию", callback_data=f"become_teacher_{exam.id}")],
+        [InlineKeyboardButton(text="К списку экзаменов", callback_data="edit_exam")]
     ])
     admin_edit_exam_keyboard_2 = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Добавить задание", callback_data="add_task")],
-        [InlineKeyboardButton(text="Покинуть экзаменационную комиссию", callback_data=f"become_admin_{exam.id}")]
+        [InlineKeyboardButton(text="Посмотреть задания", callback_data="see_tasks")],
+        [InlineKeyboardButton(text="Добавить задания", callback_data="add_task")],
+        [InlineKeyboardButton(text="Покинуть экзаменационную комиссию", callback_data=f"become_admin_{exam.id}")],
+        [InlineKeyboardButton(text="К списку экзаменов", callback_data="edit_exam")]
     ])
     if examiner_id in exam.examiners:
-        await message.answer("Выберите действие:", reply_markup=admin_edit_exam_keyboard_2)
+        await message.answer(f"Экзамен {exam.name}:", reply_markup=admin_edit_exam_keyboard_2)
     else:
-        await message.answer("Выберите действие:", reply_markup=admin_edit_exam_keyboard_1)
+        await message.answer(f"Экзамен {exam.name}:", reply_markup=admin_edit_exam_keyboard_1)
 
+@router.callback_query(lambda c: c.data == 'see_tasks')
+async def add_tasks_command(callback_query: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    await callback_query.answer()
+    message = callback_query.message
+    try:
+        exams = adapter.get_available_exams()
+        if exams:
+            response = "Список доступных экзаменов:\n\n"
+            for i in range(len(exams)):
+                response += f"{i + 1}. Название: {exams[i].name}, Дата и время: {exams[i].timestamp}\n"
+            response += "\nНапишите номер экзамена, который хотите изменить."
+            await message.edit_text(response)
+            await state.set_state(Form.edit_exam_num)
+        else:
+            await message.edit_text("Нет доступных экзаменов")
+    except Exception as e:
+        await message.edit_text("Нет доступных экзаменов")
 
 @router.callback_query(lambda c: c.data == 'add_task')
 async def add_tasks_command(callback_query: types.CallbackQuery, state: FSMContext):

@@ -12,3 +12,7 @@ admin_task_keyboard = ReplyKeyboardMarkup(
     resize_keyboard=True,
     one_time_keyboard=True
 )
+
+admin_back_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="Главное меню", callback_data="admin_main_menu")]
+])
