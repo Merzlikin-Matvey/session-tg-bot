@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, Text, BigInteger, ARRAY
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, Text, BigInteger, ARRAY, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
@@ -26,6 +26,7 @@ class Exam(Base):
     participants = Column(ARRAY(String), default=[])
     examiners = Column(ARRAY(String), default=[])
     started = Column(Boolean, default=False)
+    user_tasks = Column(JSON, default={})
 
 
 DB_NAME = os.getenv('DB_NAME')

@@ -1,5 +1,5 @@
 from src.database.db_adapter import DatabaseAdapter
-from sqlalchemy import Column, Integer, String, DateTime, Text, ARRAY, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, Text, ARRAY, Boolean, JSON
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -15,8 +15,9 @@ class Exam(Base):
     participants = Column(ARRAY(String), default=[])
     examiners = Column(ARRAY(String), default=[])
     started = Column(Boolean, default=False)
+    user_tasks = Column(JSON, default={})
 
-    def __init__(self, name, timestamp, tasks_paths="", participants=[], examiners=[], started=False, adapter=None):
+    def __init__(self, name, timestamp, tasks_paths="", participants=[], examiners=[], started=False, adapter=None, user_tasks={}):
         self.adapter = adapter or DatabaseAdapter()
         self.name = name
         self.timestamp = timestamp
@@ -24,6 +25,8 @@ class Exam(Base):
         self.participants = participants
         self.examiners = examiners
         self.started = started
+        self.user_tasks = {}
+
 
     def __str__(self):
         return f"Exam {self.name} ({self.timestamp}) {self.participants} {self.examiners}"
@@ -40,7 +43,8 @@ class Exam(Base):
                 participants=exam_data.participants,
                 examiners=exam_data.examiners,
                 started=exam_data.started,
-                adapter=adapter
+                adapter=adapter,
+                user_tasks=exam_data.user_tasks
             )
             exam.id = exam_data.id
             return exam
@@ -66,7 +70,8 @@ class Exam(Base):
                     "tasks_paths": self.tasks_paths,
                     "participants": self.participants,
                     "examiners": self.examiners,
-                    "started": self.started
+                    "started": self.started,
+                    "user_tasks": self.user_tasks
                 })
         else:
             self.adapter.db.add(self)
@@ -114,3 +119,12 @@ class Exam(Base):
     def assign_student_to_examiner(self, student_id, examiner_id):
         self.adapter.db.query(Exam).filter(Exam.participants.any(student_id)).update({"examiners": [examiner_id]})
         self.adapter.db.commit()
+
+    def add_user_task(self, telegram_id, task_path):
+        user_tasks = self.user_tasks
+        if telegram_id in user_tasks:
+            user_tasks[telegram_id].append(task_path)
+        else:
+            user_tasks[telegram_id] = [task_path]
+        self.user_tasks = user_tasks
+        self.save()

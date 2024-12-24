@@ -6,16 +6,19 @@ import numpy as np
 from src.objects.exam import Exam
 from src.keyboards.user_keyboards import *
 from src.keyboards.admin_keyboards import *
+from src.objects.exam import Exam as ExamObject
 
 logging.basicConfig(level=logging.INFO)
 
 
-async def send_task_image(bot: Bot, telegram_id: int, image_path: str):
+async def send_task_image(bot: Bot, telegram_id: int, image_path: str, exam: Exam):
     try:
         photo_file = FSInputFile(path=image_path)
         await bot.send_photo(chat_id=telegram_id, photo=photo_file)
         await bot.send_message(chat_id=telegram_id, text="Ваш билет", reply_markup=user_exam_reply_keyboard)
         logging.info(f"Отправлено изображение: {image_path}")
+        exam = ExamObject.get_exam_by_id(exam.id)
+        exam.add_user_task(str(telegram_id), image_path)
     except Exception as e:
         logging.error(f"Неизвестная ошибка при отправке изображения: {e}")
 
@@ -43,4 +46,4 @@ async def send_tasks_for_all_users(bot: Bot, exam: Exam):
     else:
         for i, telegram_id in enumerate(participants):
             task_path = tasks_paths[i % len(tasks_paths)]
-            await send_task_image(bot, telegram_id, task_path)
+            await send_task_image(bot, telegram_id, task_path, exam)

@@ -12,6 +12,7 @@ from src.keyboards.admin_keyboards import *
 from aiogram import Bot
 from aiogram.types import FSInputFile
 
+
 router = Router()
 adapter = DatabaseAdapter()
 
@@ -64,39 +65,43 @@ async def edit_exam(callback_query: types.CallbackQuery, state: FSMContext):
     await state.clear()
     await callback_query.answer()
     message = callback_query.message
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Создать экзамен", callback_data="add_exam")]
+    ])
     try:
-        exams = adapter.get_available_exams()
+        exams = adapter.get_recent_exams()
         if exams:
             response = "Список доступных экзаменов:\n\n"
             for i in range(len(exams)):
                 response += f"{i + 1}. Название: {exams[i].name}, Дата и время: {exams[i].timestamp}\n"
             response += "\nНапишите номер экзамена, который хотите изменить."
-            await message.edit_text(response)
+            await message.edit_text(response, reply_markup=keyboard)
             await state.set_state(Form.edit_exam_num)
         else:
-            await message.edit_text("Нет доступных экзаменов")
+            await message.edit_text("Нет доступных экзаменов", reply_markup=keyboard)
     except Exception as e:
-        await message.edit_text("Нет доступных экзаменов")
+        await message.edit_text("Нет доступных экзаменов", reply_markup=keyboard)
+
 
 
 @router.message(Form.edit_exam_num)
 async def process_exam_datetime(message: types.Message, state: FSMContext):
-    examiner_id = message.from_user.id
+    examiner_id = str(message.from_user.id)
     exam_num = int(message.text)
-    exams = adapter.get_available_exams()
+    exams = adapter.get_recent_exams()
     if exam_num < 1 or exam_num > len(exams):
         await message.edit_text("Неверный номер экзамена.")
         return
     exam = exams[exam_num - 1]
     await state.update_data(exam_id=exam.id)
     admin_edit_exam_keyboard_1 = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Посмотреть задания", callback_data="see_tasks")],
+        [InlineKeyboardButton(text="Посмотреть задания", callback_data=f"see_tasks_{exam.id}")],
         [InlineKeyboardButton(text="Добавить задания", callback_data="add_task")],
         [InlineKeyboardButton(text="Вступить в экзаменационную комиссию", callback_data=f"become_teacher_{exam.id}")],
         [InlineKeyboardButton(text="К списку экзаменов", callback_data="edit_exam")]
     ])
     admin_edit_exam_keyboard_2 = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Посмотреть задания", callback_data="see_tasks")],
+        [InlineKeyboardButton(text="Посмотреть задания", callback_data=f"see_tasks_{exam.id}")],
         [InlineKeyboardButton(text="Добавить задания", callback_data="add_task")],
         [InlineKeyboardButton(text="Покинуть экзаменационную комиссию", callback_data=f"become_admin_{exam.id}")],
         [InlineKeyboardButton(text="К списку экзаменов", callback_data="edit_exam")]
@@ -106,24 +111,28 @@ async def process_exam_datetime(message: types.Message, state: FSMContext):
     else:
         await message.answer(f"Экзамен {exam.name}:", reply_markup=admin_edit_exam_keyboard_1)
 
-@router.callback_query(lambda c: c.data == 'see_tasks')
-async def add_tasks_command(callback_query: types.CallbackQuery, state: FSMContext):
-    await state.clear()
+
+@router.callback_query(lambda c: c.data.startswith('see_tasks'))
+async def see_tasks(callback_query: types.CallbackQuery):
     await callback_query.answer()
     message = callback_query.message
     try:
-        exams = adapter.get_available_exams()
-        if exams:
-            response = "Список доступных экзаменов:\n\n"
-            for i in range(len(exams)):
-                response += f"{i + 1}. Название: {exams[i].name}, Дата и время: {exams[i].timestamp}\n"
-            response += "\nНапишите номер экзамена, который хотите изменить."
-            await message.edit_text(response)
-            await state.set_state(Form.edit_exam_num)
-        else:
-            await message.edit_text("Нет доступных экзаменов")
+        command = callback_query.data
+        parts = command.split('_')
+        exam_id = int(parts[2])
+
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="Получить все задачи", callback_data=f"get_all_tasks_{exam_id}")],
+            [InlineKeyboardButton(text="Получить задачи для конкретного пользователя", callback_data=f"get_user_tasks_{exam_id}")]
+        ])
+
+        await message.edit_text("Выберите действие:", reply_markup=keyboard)
     except Exception as e:
-        await message.edit_text("Нет доступных экзаменов")
+        print(e)
+        await message.answer("Произошла ошибка при просмотре заданий.")
+
+
+
 
 @router.callback_query(lambda c: c.data == 'add_task')
 async def add_tasks_command(callback_query: types.CallbackQuery, state: FSMContext):
@@ -138,6 +147,84 @@ async def add_tasks_command(callback_query: types.CallbackQuery, state: FSMConte
     else:
         await callback_query.message.reply("У вас нет прав для добавления задач.")
 
+@router.callback_query(lambda c: c.data.startswith('get_all_tasks'))
+async def get_all_tasks(callback_query: types.CallbackQuery, state: FSMContext):
+    await callback_query.answer()
+    message = callback_query.message
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Вернуться к экзаменам", callback_data="edit_exam")]
+    ])
+
+    try:
+        command = callback_query.data
+        parts = command.split('_')
+        exam_id = int(parts[3])
+
+        exam = Exam.get_exam_by_id(exam_id)
+
+        if len(exam.tasks_paths) == 0:
+            await message.answer("Задачи для экзамена отсутствуют.", reply_markup=keyboard)
+        else:
+            tasks = exam.tasks_paths.split(';')
+            for task in tasks:
+                await message.answer_document(document=FSInputFile(task))
+            await message.answer("Все задания успешно отправлены.", reply_markup=keyboard)
+    except Exception as e:
+        print(e)
+        await message.answer("Произошла ошибка при получении всех заданий.", reply_markup=keyboard)
+
+
+
+
+
+
+@router.callback_query(lambda c: c.data.startswith('get_user_tasks'))
+async def get_user_tasks(callback_query: types.CallbackQuery, state: FSMContext):
+    await callback_query.answer()
+    message = callback_query.message
+    try:
+        command = callback_query.data
+        parts = command.split('_')
+        exam_id = int(parts[3])
+
+        exam = Exam.get_exam_by_id(exam_id)
+        participants = exam.participants
+
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text=f"Пользователь {i+1}", callback_data=f"user_task_{exam_id}_{participant}")]
+            for i, participant in enumerate(participants)
+        ])
+
+        await message.edit_text("Выберите пользователя:", reply_markup=keyboard)
+    except Exception as e:
+        print(e)
+        await message.answer("Произошла ошибка при получении списка пользователей.")
+    await state.set_state(Form.edit_exam_num)
+
+
+@router.callback_query(lambda c: c.data.startswith('user_task'))
+async def user_task(callback_query: types.CallbackQuery, state: FSMContext):
+    await callback_query.answer()
+    message = callback_query.message
+    try:
+        command = callback_query.data
+        parts = command.split('_')
+        exam_id = int(parts[2])
+        user_id = parts[3]
+
+        exam = Exam.get_exam_by_id(exam_id)
+        tasks = exam.tasks_paths.split(';')
+
+        # Логика для получения задач конкретного пользователя
+        # Например, можно отправить первую задачу из списка
+        if tasks:
+            await message.answer_document(document=FSInputFile(tasks[0]))
+        else:
+            await message.answer("Задачи для пользователя не найдены.")
+    except Exception as e:
+        print(e)
+        await message.answer("Произошла ошибка при получении задач пользователя.")
+    await state.set_state(Form.edit_exam_num)
 
 @router.message(Form.awaiting_task_image)
 async def process_task_image(message: types.Message, state: FSMContext, bot: Bot):
@@ -173,13 +260,18 @@ async def process_task_image(message: types.Message, state: FSMContext, bot: Bot
     else:
         await state.clear()
         await message.answer("Добавление задач завершено.", reply_markup=types.ReplyKeyboardRemove())
-        exams = adapter.get_available_exams()
+        exams = adapter.get_recent_exams()
         if exams:
             response = "Список доступных экзаменов:\n\n"
             for i in range(len(exams)):
                 response += f"{i + 1}. Название: {exams[i].name}, Дата и время: {exams[i].timestamp}\n"
             response += "\nНапишите номер экзамена, который хотите изменить."
-            await message.answer(response, reply_markup=admin_main_menu_keyboard)
+
+            keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="Создать экзамен", callback_data="add_exam")]
+            ])
+
+            await message.answer(response, reply_markup=keyboard)
             await state.set_state(Form.edit_exam_num)
         else:
             await message.answer("Нет доступных экзаменов")
