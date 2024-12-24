@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime
 
 from aiogram import Bot
+import yaml
 
 from src.database.db_adapter import DatabaseAdapter
 from src.send_task import send_tasks_for_all_users
@@ -20,6 +21,15 @@ async def schedule_exams(bot: Bot):
 
 
 async def check_new_exams(bot: Bot):
+    try:
+        with open('config.yaml', 'r') as file:
+            config = yaml.safe_load(file)
+            db_check_interval = int(config['db_check_interval'])
+    except Exception as e:
+        print("Error while reading config file")
+        print(e)
+        db_check_interval = 5
+
     while True:
         await schedule_exams(bot)
-        await asyncio.sleep(1)
+        await asyncio.sleep(db_check_interval)

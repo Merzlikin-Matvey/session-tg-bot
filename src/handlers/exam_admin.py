@@ -66,6 +66,7 @@ async def edit_exam(callback_query: types.CallbackQuery, state: FSMContext):
     message = callback_query.message
     try:
         exams = Exam.get_all_exams()
+        exams = await sort_upcoming_exams(exams)
         if exams:
             response = "Список доступных экзаменов:\n\n"
             for i in range(len(exams)):

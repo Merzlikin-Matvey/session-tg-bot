@@ -3,3 +3,4 @@ default_admins:
   - 5064226866
 
 tasks_dir: tasks
+db_check_interval: 1

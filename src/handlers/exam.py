@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from aiogram import types, Router, Bot
 from aiogram.fsm.context import FSMContext
 
@@ -9,6 +11,11 @@ from src.keyboards.admin_keyboards import *
 
 router = Router()
 
+async def sort_upcoming_exams(exams):
+    current_time = datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S.%f")
+    upcoming_exams = [exam for exam in exams if datetime.strptime(str(exam.timestamp), "%Y-%m-%d %H:%M:%S").timestamp() >= current_time.timestamp()]
+    return sorted(upcoming_exams, key=lambda exam: exam.timestamp)
+
 
 @router.callback_query(lambda c: c.data == 'join_exam')
 async def join_exam_list(callback_query: types.CallbackQuery, state: FSMContext):
@@ -17,6 +24,7 @@ async def join_exam_list(callback_query: types.CallbackQuery, state: FSMContext)
     message = callback_query.message
     try:
         exams = Exam.get_all_exams()
+        exams = await sort_upcoming_exams(exams)
         if exams:
             response = "Список доступных экзаменов:\n\n"
             for i in range(len(exams)):
