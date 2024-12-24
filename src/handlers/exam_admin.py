@@ -48,7 +48,7 @@ async def process_exam_datetime(message: types.Message, state: FSMContext):
         exam_name = data['exam_name']
         exam = Exam(exam_name, exam_datetime)
         exam.save()
-        await message.answer("Экзамен успешно добавлен!", reply_markup=admin_edit_exam_keyboard)
+        await message.answer("Экзамен успешно добавлен!", reply_markup=admin_main_menu_keyboard)
         await state.clear()
     except ValueError as e:
         print("ValueError")
@@ -68,7 +68,7 @@ async def edit_exam(callback_query: types.CallbackQuery, state: FSMContext):
             for i in range(len(exams)):
                 response += f"{i + 1}. Название: {exams[i].name}, Дата и время: {exams[i].timestamp}\n"
             response += "\nНапишите номер экзамена, который хотите изменить."
-            await message.edit_text(response, reply_markup=admin_create_exam_keyboard)
+            await message.edit_text(response)
             await state.set_state(Form.edit_exam_num)
             state = await state.get_state()
             print("State", state)
@@ -80,15 +80,26 @@ async def edit_exam(callback_query: types.CallbackQuery, state: FSMContext):
 
 @router.message(Form.edit_exam_num)
 async def process_exam_datetime(message: types.Message, state: FSMContext):
+    examiner_id = message.from_user.id
     exam_num = int(message.text)
     exams = adapter.get_available_exams()
     if exam_num < 1 or exam_num > len(exams):
         await message.edit_text("Неверный номер экзамена.")
         return
-    exam_id = exams[exam_num - 1].id
-    await state.update_data(exam_id=exam_id)
-    # Если уже в комиссии, показываем другую клавиатуру
-    await message.answer("Выберите действие:", reply_markup=admin_edit_exam_keyboard_1)
+    exam = exams[exam_num - 1]
+    await state.update_data(exam_id=exam.id)
+    admin_edit_exam_keyboard_1 = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="Добавить задание", callback_data="add_task")],
+    [InlineKeyboardButton(text="Вступить в экзаменационную комиссию", callback_data=f"become_teacher_{exam.id}")]
+])
+    admin_edit_exam_keyboard_2 = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="Добавить задание", callback_data="add_task")],
+    [InlineKeyboardButton(text="Покинуть экзаменационную комиссию", callback_data=f"become_admin_{exam.id}")]
+])
+    if examiner_id in exam.examiners:
+        await message.answer("Выберите действие:", reply_markup=admin_edit_exam_keyboard_2)
+    else:
+        await message.answer("Выберите действие:", reply_markup=admin_edit_exam_keyboard_1)
 
 
 @router.callback_query(lambda c: c.data == 'add_task')
@@ -145,7 +156,7 @@ async def process_task_image(message: types.Message, state: FSMContext, bot: Bot
             for i in range(len(exams)):
                 response += f"{i + 1}. Название: {exams[i].name}, Дата и время: {exams[i].timestamp}\n"
             response += "\nНапишите номер экзамена, который хотите изменить."
-            await message.answer(response, reply_markup=admin_create_exam_keyboard)
+            await message.answer(response, reply_markup=admin_main_menu_keyboard)
             await state.set_state(Form.edit_exam_num)
         else:
             await message.answer("Нет доступных экзаменов")
@@ -160,36 +171,55 @@ async def process_task_image(message: types.Message, state: FSMContext, bot: Bot
     #     text=f"Пожалуйста, отправьте архив, сжатую папку или изображения с задачами для экзамена:\n\nПолучено файлов: {files_received}"
     # )
 
-
-@router.message(lambda message: message.text and message.text.startswith('/add_examiner_'))
-async def add_examiner(message: types.Message):
+@router.callback_query(lambda c: c.data.startswith('become_teacher'))
+async def become_teacher(callback_query: types.CallbackQuery):
+    callback_query.answer()
+    message = callback_query.message
     try:
-        telegram_id = message.from_user.id
+        telegram_id = callback_query.from_user.id
         user = User(telegram_id)
 
-        if not user.is_admin:
-            await message.reply("У вас нет прав для выполнения этой команды.")
-            return
-
-        command = message.text
+        command = callback_query.data
         parts = command.split('_')
-        if len(parts) != 3:
-            await message.reply("Использование: /add_examiner_{exam_id}")
-            return
-
         exam_id = int(parts[2])
 
         exam = Exam.get_exam_by_id(exam_id)
-        if not exam:
-            await message.reply("Экзамен с указанным ID не найден.")
-            return
 
         exam.add_examiner(telegram_id)
-        await message.reply(f"Вы добавлены в экзамен {exam_id} в качестве экзаменатора.")
+        admin_edit_exam_keyboard_2 = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="Добавить задание", callback_data="add_task")],
+    [InlineKeyboardButton(text="Покинуть экзаменационную комиссию", callback_data=f"become_admin_{exam.id}")]
+])
+        await message.edit_text(f"Вы добавлены в экзамен {exam.name} в качестве экзаменатора.", reply_markup=admin_edit_exam_keyboard_2)
 
     except Exception as e:
         print(e)
-        await message.reply("Произошла ошибка при добавлении экзаменатора.")
+        await message.answer("Произошла ошибка при добавлении экзаменатора.")
+
+@router.callback_query(lambda c: c.data.startswith('become_admin'))
+async def become_teacher(callback_query: types.CallbackQuery):
+    callback_query.answer()
+    message = callback_query.message
+    try:
+        telegram_id = callback_query.from_user.id
+        user = User(telegram_id)
+
+        command = callback_query.data
+        parts = command.split('_')
+        exam_id = int(parts[2])
+
+        exam = Exam.get_exam_by_id(exam_id)
+
+        exam.remove_examiner(telegram_id)
+        admin_edit_exam_keyboard_1 = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="Добавить задание", callback_data="add_task")],
+    [InlineKeyboardButton(text="Вступить в экзаменационную комиссию", callback_data=f"become_teacher_{exam.id}")]
+])
+        await message.edit_text(f"Вы больше не экзаменатор в {exam.name}.", reply_markup=admin_edit_exam_keyboard_1)
+
+    except Exception as e:
+        print(e)
+        await message.answer("Произошла ошибка при удалении экзаменатора.")
 
 
 @router.message(lambda message: message.text and message.text.startswith('/view_exam_tickets_'))

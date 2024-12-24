@@ -96,6 +96,12 @@ class Exam(Base):
         if telegram_id not in self.examiners:
             self.examiners.append(telegram_id)
             self.save()
+    
+    def remove_examiner(self, telegram_id):
+        telegram_id = str(telegram_id)
+        if telegram_id not in self.examiners:
+            self.examiners.remove(telegram_id)
+            self.save()
 
     def is_examiner(self, telegram_id):
         telegram_id = str(telegram_id)
