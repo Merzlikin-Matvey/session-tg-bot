@@ -173,8 +173,8 @@ async def send_ready_notification(bot: Bot, examiner_id, student_id, student_nam
 
 
 @router.callback_query(lambda c: c.data == "student_ready")
-async def ready_to_answer_command(message: types.Message, state: FSMContext):
-    telegram_id = message.from_user.id
+async def ready_to_answer_command(callback_query: types.CallbackQuery, state: FSMContext):
+    telegram_id = callback_query.from_user.id
     user = User(telegram_id)
     if user.exists():
         if user.registered_exam_id:
@@ -182,14 +182,13 @@ async def ready_to_answer_command(message: types.Message, state: FSMContext):
             if exam and str(telegram_id) in exam.participants:
                 message_ids = []
                 for examiner_id in exam.examiners:
-                    message_id = await send_ready_notification(message.bot, examiner_id, telegram_id, user.name, user.registered_exam_id)
+                    message_id = await send_ready_notification(callback_query.bot, examiner_id, telegram_id, user.name, user.registered_exam_id)
                     message_ids.append((examiner_id, message_id))
                 await state.update_data(message_ids=message_ids)
-                await message.reply("Уведомление отправлено всем экзаменаторам.")
+                await callback_query.message.answer("Уведомление отправлено всем экзаменаторам.")
             else:
-                await message.reply("Вы не участвуете в этом экзамене.")
+                await callback_query.message.answer("Вы не участвуете в этом экзамене.")
         else:
-            await message.reply("Вы не зарегистрированы на экзамен.")
+            await callback_query.message.answer("Вы не зарегистрированы на экзамен.")
     else:
-        await message.reply("Вы не зарегистрированы в системе.")
-
+        await callback_query.message.answer("Вы не зарегистрированы в системе.")

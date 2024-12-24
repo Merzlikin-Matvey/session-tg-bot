@@ -184,7 +184,7 @@ async def become_teacher(callback_query: types.CallbackQuery):
 
         exam.add_examiner(telegram_id)
         admin_edit_exam_keyboard_2 = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="Добавить задание", callback_data="add_task")],
+            [InlineKeyboardButton(text="Вернуться к редактированию", callback_data="edit_exam")],
             [InlineKeyboardButton(text="Покинуть экзаменационную комиссию", callback_data=f"become_admin_{exam.id}")]
         ])
         await message.edit_text(f"Вы добавлены в экзамен {exam.name} в качестве экзаменатора.", reply_markup=admin_edit_exam_keyboard_2)
@@ -210,7 +210,7 @@ async def become_teacher(callback_query: types.CallbackQuery):
 
         exam.remove_examiner(telegram_id)
         admin_edit_exam_keyboard_1 = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="Добавить задание", callback_data="add_task")],
+            [InlineKeyboardButton(text="Вернуться к редактированию", callback_data="edit_exam")],
             [InlineKeyboardButton(text="Вступить в экзаменационную комиссию", callback_data=f"become_teacher_{exam.id}")]
         ])
         await message.edit_text(f"Вы больше не экзаменатор в {exam.name}.", reply_markup=admin_edit_exam_keyboard_1)
