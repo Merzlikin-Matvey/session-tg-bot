@@ -8,8 +8,16 @@ from src.forms import Form
 from src.tasks.save import save_task_image, save_task_pdf, save_task_zip, save_task_rar
 from src.keyboards.admin_keyboards import *
 from aiogram import Bot
+from aiogram.types import FSInputFile
+
 
 router = Router()
+
+async def sort_upcoming_exams(exams):
+    current_time = datetime.strptime(str(datetime.now()),"%Y-%m-%d %H:%M:%S.%f")
+    upcoming_exams = [exam for exam in exams if datetime.strptime(str(exam.timestamp), "%Y-%m-%d %H:%M:%S").timestamp() >= current_time.timestamp()]
+    return sorted(upcoming_exams, key=lambda exam: exam.timestamp)
+
 
 
 @router.callback_query(lambda c: c.data == 'add_exam')
@@ -184,3 +192,57 @@ async def add_examiner(message: types.Message):
     except Exception as e:
         print(e)
         await message.reply("Произошла ошибка при добавлении экзаменатора.")
+
+
+
+@router.message(lambda message: message.text and message.text.startswith('/view_exam_tickets_'))
+async def view_exam_tickets(message: types.Message):
+    try:
+        telegram_id = message.from_user.id
+        user = User(telegram_id)
+
+        if not user.is_admin:
+            await message.reply("У вас нет прав для выполнения этой команды.")
+            return
+        
+        else:
+            exam_id = int(message.text.split('_')[3])
+            exams = Exam.get_exam_by_id(exam_id)
+            response = "Список учеников:\n\n"
+            for i in range(len(exams.participants)):
+                user_id = exams.participants[i]
+                resposne += f"{i+1}.Имя: {User(user_id).name}. Айди:{user_id}. Для просмотра билета ученика напишите /view_ticket_{user_id}\n"
+            await message.reply(response)
+                
+                
+
+    except Exception as e:
+        print(e)
+        await message.reply("Произошла ошибка при просмотре билетов экзамена.")
+
+
+
+@router.message(lambda message: message.text and message.text.startswith('/view_ticket_'))
+async def view_ticket(message: types.Message):
+    try:
+        telegram_id = message.from_user.id
+        user = User(telegram_id)
+        if not user.is_admin:
+            await message.reply("У вас нет прав для выполнения этой команды.")
+            return
+        else:
+            user_id = int(message.text.split('_')[2])
+            user = User(user_id)
+            exam = user.get_registered_exam()
+            if exam:
+                exam = Exam.get_exam_by_id(exam)
+                if exam:
+                    await message.reply_document(document=FSInputFile("./tasks/exam_1_task_759f2f36-b721-4659-a6af-d4395f56aae8.pdf"))
+                else:
+                    await message.reply("Экзамен не найден.")
+            else:
+                await message.reply("Вы не зарегистрированы на экзамен.")
+
+    except Exception as e:
+        print(e)
+        await message.reply("Произошла ошибка при просмотре билетов экзамена.")
