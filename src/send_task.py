@@ -25,11 +25,11 @@ async def send_tasks_for_all_users(bot: Bot, exam: Exam):
     tasks_paths = exam.tasks_paths
     if not tasks_paths:
         for telegram_id in participants:
-            await bot.send_message(chat_id=telegram_id, text="Извините, но задачи для экзамена отсутствуют.")
+            await bot.send_message(chat_id=telegram_id, text="Извините, но задачи для экзамена отсутствуют.", reply_markup=user_exam_keyboard)
         return
     if len(tasks_paths) < 3:
         for telegram_id in participants:
-            await bot.send_message(chat_id=telegram_id, text="Извините, но недостаточно задач для экзамена.")
+            await bot.send_message(chat_id=telegram_id, text="Извините, но недостаточно задач для экзамена.", reply_markup=user_exam_keyboard)
         return
     tasks_paths = tasks_paths.split(';')
 
