@@ -31,7 +31,7 @@ async def join_exam_list(callback_query: types.CallbackQuery, state: FSMContext)
                 response += f"{i + 1}. Название: {exams[i].name}, Дата и время: {exams[i].timestamp}\n"
             response += "\nНапишите номер экзамена, к которому хотите присоединиться."
             await message.edit_text(response)
-            await state.set_state(Form.edit_exam_num)
+            await state.set_state(Form.join_exam_num)
         else:
             await message.edit_text("Нет доступных экзаменов")
     except Exception as e:
