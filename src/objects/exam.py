@@ -25,11 +25,11 @@ class Exam(Base):
         self.participants = participants
         self.examiners = examiners
         self.started = started
-        self.user_tasks = {}
+        self.user_tasks = user_tasks
 
 
     def __str__(self):
-        return f"Exam {self.name} ({self.timestamp}) {self.participants} {self.examiners}"
+        return f"Exam {self.name} ({self.timestamp}) {self.participants} {self.examiners} {self.started} {self.user_tasks}"
 
     @staticmethod
     def get_exam_by_id(exam_id):
@@ -128,3 +128,6 @@ class Exam(Base):
             user_tasks[telegram_id] = [task_path]
         self.user_tasks = user_tasks
         self.save()
+
+    def get_participants(self):
+        return sorted(self.participants, key=lambda x: int(x))

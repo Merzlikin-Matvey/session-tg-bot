@@ -1,3 +1,5 @@
+from http.client import responses
+
 from aiogram import types, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
@@ -174,57 +176,56 @@ async def get_all_tasks(callback_query: types.CallbackQuery, state: FSMContext):
         await message.answer("Произошла ошибка при получении всех заданий.", reply_markup=keyboard)
 
 
-
-
-
-
 @router.callback_query(lambda c: c.data.startswith('get_user_tasks'))
 async def get_user_tasks(callback_query: types.CallbackQuery, state: FSMContext):
     await callback_query.answer()
     message = callback_query.message
+
     try:
         command = callback_query.data
         parts = command.split('_')
         exam_id = int(parts[3])
 
         exam = Exam.get_exam_by_id(exam_id)
-        participants = exam.participants
+        participants = exam.get_participants()
 
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text=f"Пользователь {i+1}", callback_data=f"user_task_{exam_id}_{participant}")]
-            for i, participant in enumerate(participants)
-        ])
+        response = "Список пользователей:\n\n"
+        for i, telegram_id in enumerate(participants):
+            user = User(telegram_id)
+            response += f"{i + 1}. Пользователь: {user.name}\n"
 
-        await message.edit_text("Выберите пользователя:", reply_markup=keyboard)
+        response += "\nНапишите номер пользователя, чтобы получить его задания."
+        await message.edit_text(response)
+        await state.update_data(exam_id=exam_id)
+        await state.set_state(Form.awaiting_user_number)
     except Exception as e:
         print(e)
         await message.answer("Произошла ошибка при получении списка пользователей.")
-    await state.set_state(Form.edit_exam_num)
 
 
-@router.callback_query(lambda c: c.data.startswith('user_task'))
-async def user_task(callback_query: types.CallbackQuery, state: FSMContext):
-    await callback_query.answer()
-    message = callback_query.message
+@router.message(Form.awaiting_user_number)
+async def process_user_number(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Вернуться к экзаменам", callback_data="edit_exam")]
+    ])
     try:
-        command = callback_query.data
-        parts = command.split('_')
-        exam_id = int(parts[2])
-        user_id = parts[3]
-
+        exam_id = data['exam_id']
         exam = Exam.get_exam_by_id(exam_id)
-        tasks = exam.tasks_paths.split(';')
+        participants = exam.get_participants()
+        user_num = int(message.text)
+        user_id = participants[user_num - 1]
 
-        # Логика для получения задач конкретного пользователя
-        # Например, можно отправить первую задачу из списка
-        if tasks:
-            await message.answer_document(document=FSInputFile(tasks[0]))
+        task = exam.user_tasks[user_id][0]
+        if task:
+            await message.answer_document(document=FSInputFile(task))
         else:
-            await message.answer("Задачи для пользователя не найдены.")
+            await message.answer("Задачи для этого пользователя отсутствуют.")
+
     except Exception as e:
         print(e)
-        await message.answer("Произошла ошибка при получении задач пользователя.")
-    await state.set_state(Form.edit_exam_num)
+        await message.answer("Произошла ошибка при получении заданий пользователя.")
+    await message.answer("Задачи получены:", reply_markup=keyboard)
 
 @router.message(Form.awaiting_task_image)
 async def process_task_image(message: types.Message, state: FSMContext, bot: Bot):
@@ -338,50 +339,3 @@ async def become_teacher(callback_query: types.CallbackQuery):
         print(e)
         await message.answer("Произошла ошибка при удалении экзаменатора.")
 
-
-@router.message(lambda message: message.text and message.text.startswith('/view_exam_tickets_'))
-async def view_exam_tickets(message: types.Message):
-    try:
-        telegram_id = message.from_user.id
-        user = User(telegram_id)
-
-        if not user.is_admin:
-            await message.reply("У вас нет прав для выполнения этой команды.")
-            return
-        else:
-            exam_id = int(message.text.split('_')[3])
-            exams = Exam.get_exam_by_id(exam_id)
-            response = "Список учеников:\n\n"
-            for i in range(len(exams.participants)):
-                user_id = exams.participants[i]
-                response += f"{i + 1}.Имя: {User(user_id).name}. Айди:{user_id}. Для просмотра билета ученика напишите /view_ticket_{user_id}\n"
-            await message.reply(response)
-    except Exception as e:
-        print(e)
-        await message.reply("Произошла ошибка при просмотре билетов экзамена.")
-
-
-@router.message(lambda message: message.text and message.text.startswith('/view_ticket_'))
-async def view_ticket(message: types.Message):
-    try:
-        telegram_id = message.from_user.id
-        user = User(telegram_id)
-        if not user.is_admin:
-            await message.reply("У вас нет прав для выполнения этой команды.")
-            return
-        else:
-            user_id = int(message.text.split('_')[2])
-            user = User(user_id)
-            exam = user.get_registered_exam()
-            if exam:
-                exam = Exam.get_exam_by_id(exam)
-                if exam:
-                    await message.reply_document(document=FSInputFile("./tasks/exam_1_task_759f2f36-b721-4659-a6af-d4395f56aae8.pdf"))
-                else:
-                    await message.reply("Экзамен не найден.")
-            else:
-                await message.reply("Вы не зарегистрированы на экзамен.")
-
-    except Exception as e:
-        print(e)
-        await message.reply("Произошла ошибка при просмотре билетов экзамена.")

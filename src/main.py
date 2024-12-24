@@ -3,6 +3,7 @@ from aiogram import Bot, Dispatcher
 from dotenv import load_dotenv
 import os
 from src.handlers import start, exam_admin, exam
+from src.objects.exam import Exam
 from src.schedule import check_new_exams
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
