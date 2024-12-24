@@ -9,7 +9,7 @@ from src.send_task import send_tasks_for_all_users
 
 
 async def schedule_exams(bot: Bot):
-    do = False
+    do = True
     adapter = DatabaseAdapter()
     exams = adapter.get_all_exams()
     for exam in exams:
@@ -18,6 +18,7 @@ async def schedule_exams(bot: Bot):
             if not exam.started and exam_time <= datetime.now():
                 print(f"Starting exam {exam.id}")
                 await send_tasks_for_all_users(bot, exam)
+                exam.started = True
                 adapter.db.commit()
     adapter.close()
 
