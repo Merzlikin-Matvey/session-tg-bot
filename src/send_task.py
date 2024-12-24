@@ -23,6 +23,14 @@ async def send_task_image(bot: Bot, telegram_id: int, image_path: str):
 async def send_tasks_for_all_users(bot: Bot, exam: Exam):
     participants = exam.participants
     tasks_paths = exam.tasks_paths
+    if not tasks_paths:
+        for telegram_id in participants:
+            await bot.send_message(chat_id=telegram_id, text="Извините, но задачи для экзамена отсутствуют.")
+        return
+    if len(tasks_paths) < 3:
+        for telegram_id in participants:
+            await bot.send_message(chat_id=telegram_id, text="Извините, но недостаточно задач для экзамена.")
+        return
     tasks_paths = tasks_paths.split(';')
 
     if isinstance(tasks_paths, str):
@@ -30,10 +38,8 @@ async def send_tasks_for_all_users(bot: Bot, exam: Exam):
 
     np.random.shuffle(tasks_paths)
 
-    print(tasks_paths, len(tasks_paths))
     if len(tasks_paths) == 0:
-        for i, telegram_id in enumerate(participants):
-            await bot.send_message(chat_id=telegram_id, text="Извините, но пока что нет билетов для вас")
+        logging.error("Нет задач для отправки")
     else:
         for i, telegram_id in enumerate(participants):
             task_path = tasks_paths[i % len(tasks_paths)]
