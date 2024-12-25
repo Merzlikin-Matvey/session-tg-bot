@@ -68,7 +68,8 @@ python -m src
       tasks_paths  text,
       participants character varying[],
       started      boolean,
-      examiners    text[]
+      examiners    text[],
+      user_tasks   json
   );
   ```
 - таблица пользователей:
