@@ -166,3 +166,4 @@ cython_debug/
 
 # Project files
 tasks/
+*.zip
