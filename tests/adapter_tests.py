@@ -1,6 +1,6 @@
 import unittest
 import sys
-
+import time
 sys.path.append('./')
 from src.database import db_adapter
 
@@ -16,7 +16,9 @@ class AdapterTests(unittest.TestCase):
     def test_get_user_info(self):
         try:
             adapter = db_adapter.DatabaseAdapter()
-            user_info = adapter.get_user_info(1648778328)
+            adapter.add_user(123456, "Test User")
+            self.assertEqual(0, 0)
+            user_info = adapter.get_user_info(123456)
             self.assertIsNotNone(user_info)
         except Exception as e:
             self.fail(f"Ошибка: {e}")
@@ -32,7 +34,7 @@ class AdapterTests(unittest.TestCase):
     def test_add_user(self):
         try:
             adapter = db_adapter.DatabaseAdapter()
-            adapter.add_user(123456, "Test User")
+            adapter.add_user(int(time.time()), "Test User")
             self.assertEqual(0, 0)
         except Exception as e:
             self.fail(f"Ошибка: {e}")

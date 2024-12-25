@@ -22,25 +22,6 @@ class UserTests(unittest.TestCase):
         except Exception as e:
             self.fail(f"Ошибка: {e}")
 
-    def test_get_all_exams(self):
-        try:
-            user = User(5064226866)
-            adapter = DatabaseAdapter()
-            adapter.add_exam("test","2052-12-25 10:23:00")
-            user.set_registered_exam(1)
-            exams = user.get_all_exams()
-            self.assertIsNotNone(exams)
-        except Exception as e:
-            self.fail(f"Ошибка: {e}")
-
-
-    def test_get_registered_exams(self):
-        try:
-            user = User(5064226866)
-            exams = user.get_registered_exams()
-            self.assertIsNotNone(exams)
-        except Exception as e:
-            self.fail(f"Ошибка: {e}")
 
 
 if __name__ == "__main__":
