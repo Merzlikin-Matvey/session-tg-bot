@@ -341,6 +341,7 @@ async def become_teacher(callback_query: types.CallbackQuery):
         print(e)
         await message.answer("Произошла ошибка при удалении экзаменатора.")
 
+
 @router.message(Command(commands=["make_admin"]))
 async def make_admin_command(message: types.Message, command: CommandObject, state: FSMContext):
     try:
@@ -363,4 +364,3 @@ async def make_admin_command(message: types.Message, command: CommandObject, sta
     except Exception as e:
         print(e)
         await message.answer("Произошла ошибка при добавлении администратора.")
-

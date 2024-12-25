@@ -1,5 +1,5 @@
 from src.database.db_adapter import DatabaseAdapter
-from src.database.models import  User as UserModel
+from src.database.models import User as UserModel
 import yaml
 
 
