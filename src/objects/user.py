@@ -35,7 +35,7 @@ class User:
 
     def save(self):
         if self.exists():
-            self.adapter.db.query(UserModel).filter(UserModel.telegram_id == self.id).update(
+            self.adapter.db.query(UserModel).filter(str(UserModel.telegram_id) == str(self.id)).update(
                 {
                     "full_name": self.name,
                     "is_admin": self.is_admin,
