@@ -11,16 +11,22 @@ class UserTests(unittest.TestCase):
             user = User(int(time.time()))
             self.assertIsNotNone(user)
         except Exception as e:
-            self.fail("Не создается :(")
+            self.fail(f"Ошибка: {e}")
 
     def test_exists(self):
-        user = User(1648778328)
-        self.assertTrue(user.exists())
+        try:
+            user = User(1648778328)
+            self.assertTrue(user.exists())
+        except Exception as e:
+            self.fail(f"Ошибка: {e}")
 
     def test_get_all_exams(self):
-        user = User(5064226866)
-        exams = user.get_all_exams()
-        self.assertIsNotNone(exams)
+        try:
+            user = User(5064226866)
+            exams = user.get_all_exams()
+            self.assertIsNotNone(exams)
+        except Exception as e:
+            self.fail(f"Ошибка: {e}")
 
 
 if __name__ == "__main__":

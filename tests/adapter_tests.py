@@ -9,10 +9,9 @@ class AdapterTests(unittest.TestCase):
     def test_exists(self):
         try:
             adapter = db_adapter.DatabaseAdapter()
-            user_info = adapter.get_user_info(1648778328)
-            self.assertIsNotNone(user_info)
+            self.assertIsNotNone(adapter)
         except Exception as e:
-            self.fail("Не создается :(")
+            self.fail(f"Ошибка: {e}")
 
     def test_get_user_info(self):
         try:
@@ -20,7 +19,7 @@ class AdapterTests(unittest.TestCase):
             user_info = adapter.get_user_info(1648778328)
             self.assertIsNotNone(user_info)
         except Exception as e:
-            self.fail("Не получается :(")
+            self.fail(f"Ошибка: {e}")
 
     def test_get_all_exams(self):
         try:
@@ -28,7 +27,7 @@ class AdapterTests(unittest.TestCase):
             exams = adapter.get_all_exams()
             self.assertIsNotNone(exams)
         except Exception as e:
-            self.fail("Не получается :(")
+            self.fail(f"Ошибка: {e}")
 
     def test_add_user(self):
         try:
@@ -36,7 +35,7 @@ class AdapterTests(unittest.TestCase):
             adapter.add_user(123456, "Test User")
             self.assertEqual(0, 0)
         except Exception as e:
-            self.fail("Не добавляется :(")
+            self.fail(f"Ошибка: {e}")
 
     def test_add_exam(self):
         try:
@@ -44,7 +43,7 @@ class AdapterTests(unittest.TestCase):
             adapter.add_exam("Test Exam", "2052-06-6 12:12")
             self.assertEqual(0, 0)
         except Exception as e:
-            self.fail("Не добавляется :(")
+            self.fail(f"Ошибка: {e}")
 
 
 if __name__ == "__main__":
