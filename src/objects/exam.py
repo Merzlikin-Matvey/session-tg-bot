@@ -27,7 +27,6 @@ class Exam(Base):
         self.started = started
         self.user_tasks = user_tasks
 
-
     def __str__(self):
         return f"Exam {self.name} ({self.timestamp}) {self.participants} {self.examiners} {self.started} {self.user_tasks}"
 

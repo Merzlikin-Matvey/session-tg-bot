@@ -63,6 +63,7 @@ async def leave_exam(callback_query: types.CallbackQuery):
     user.set_registered_exam(None)
     await message.edit_text(f"Вы успешно покинули экзамен {exam.name}", reply_markup=user_main_menu_keyboard)
 
+
 async def send_consultation_request(bot: Bot, examiner_id, requester_id, requester_name):
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=[[
         types.InlineKeyboardButton(text="Принять", callback_data=f"accept_consultation:{requester_id}"),
@@ -112,7 +113,6 @@ async def handle_ready_to_answer(message: types.Message, state: FSMContext):
             await message.answer("Нет доступных экзаменаторов для консультации.", reply_markup=user_exam_reply_keyboard)
     else:
         await message.answer("Экзамен не найден.", reply_markup=user_exam_reply_keyboard)
-
 
 
 @router.callback_query(lambda c: c.data.startswith("accept_consultation"))

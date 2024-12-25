@@ -18,11 +18,13 @@ from aiogram.types import FSInputFile
 router = Router()
 adapter = DatabaseAdapter()
 
+
 @router.callback_query(lambda c: c.data == 'admin_main_menu')
 async def admin_main_menu(callback_query: types.CallbackQuery):
     await callback_query.answer()
     message = callback_query.message
-    await message.edit_text(f"Выберите действие:", reply_markup=admin_main_menu_keyboard)
+    await message.edit_text("Выберите действие:", reply_markup=admin_main_menu_keyboard)
+
 
 @router.callback_query(lambda c: c.data == 'add_exam')
 async def add_exam_command(callback_query: types.CallbackQuery, state: FSMContext):
@@ -85,7 +87,6 @@ async def edit_exam(callback_query: types.CallbackQuery, state: FSMContext):
         await message.edit_text("Нет доступных экзаменов", reply_markup=keyboard)
 
 
-
 @router.message(Form.edit_exam_num)
 async def process_exam_datetime(message: types.Message, state: FSMContext):
     examiner_id = str(message.from_user.id)
@@ -134,8 +135,6 @@ async def see_tasks(callback_query: types.CallbackQuery):
         await message.answer("Произошла ошибка при просмотре заданий.")
 
 
-
-
 @router.callback_query(lambda c: c.data == 'add_task')
 async def add_tasks_command(callback_query: types.CallbackQuery, state: FSMContext):
     telegram_id = callback_query.from_user.id
@@ -148,6 +147,7 @@ async def add_tasks_command(callback_query: types.CallbackQuery, state: FSMConte
         await state.set_state(Form.awaiting_task_image)
     else:
         await callback_query.message.reply("У вас нет прав для добавления задач.")
+
 
 @router.callback_query(lambda c: c.data.startswith('get_all_tasks'))
 async def get_all_tasks(callback_query: types.CallbackQuery, state: FSMContext):
@@ -226,6 +226,7 @@ async def process_user_number(message: types.Message, state: FSMContext):
         print(e)
         await message.answer("Произошла ошибка при получении заданий пользователя.")
     await message.answer("Задачи получены:", reply_markup=keyboard)
+
 
 @router.message(Form.awaiting_task_image)
 async def process_task_image(message: types.Message, state: FSMContext, bot: Bot):
@@ -339,4 +340,3 @@ async def become_teacher(callback_query: types.CallbackQuery):
     except Exception as e:
         print(e)
         await message.answer("Произошла ошибка при удалении экзаменатора.")
-
