@@ -1,0 +1,10 @@
+name: Deploy project on server
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+
+# напишем в светлом и далеком будущем, обещаем!
