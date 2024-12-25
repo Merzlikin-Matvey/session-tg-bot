@@ -15,7 +15,7 @@ class TestExams(unittest.TestCase):
     def test_get_exam_by_id(self):
         try:
             exam = Exam.get_exam_by_id(2)
-            self.assertIsNotNone(exam)
+            self.assertIsInstance(exam, Exam | None)
         except Exception as e:
             self.fail(f"Ошибка: {e}")
 

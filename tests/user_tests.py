@@ -15,7 +15,8 @@ class UserTests(unittest.TestCase):
 
     def test_exists(self):
         try:
-            user = User(1648778328)
+            user = User(int(time.time()))
+            user.save()
             self.assertTrue(user.exists())
         except Exception as e:
             self.fail(f"Ошибка: {e}")
