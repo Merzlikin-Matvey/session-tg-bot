@@ -10,8 +10,7 @@ user_exam_reply_keyboard = ReplyKeyboardMarkup(
         [KeyboardButton(text="Запросить консультацию")],
         [KeyboardButton(text="Покинуть экзамен")]
     ],
-    resize_keyboard=True,
-    one_time_keyboard=True
+    resize_keyboard=True
 )
 
 confirm_leave_exam_keyboard_1 = ReplyKeyboardMarkup(
