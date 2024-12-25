@@ -1,4 +1,5 @@
 from src.database.db_adapter import DatabaseAdapter
+from src.database.models import  User as UserModel
 import yaml
 
 
@@ -33,7 +34,16 @@ class User:
         self.is_admin = is_admin
 
     def save(self):
-        pass
+        if self.exists():
+            self.adapter.db.query(UserModel).filter(UserModel.telegram_id == self.id).update(
+                {
+                    "full_name": self.name,
+                    "is_admin": self.is_admin,
+                    "registered_exam_id": self.registered_exam_id
+                })
+        else:
+            pass
+        self.adapter.db.commit()
 
     def get_all_exams(self):
         return self.adapter.get_all_exams()

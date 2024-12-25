@@ -1,7 +1,7 @@
 from http.client import responses
 
 from aiogram import types, Router
-from aiogram.filters import Command
+from aiogram.filters import Command, CommandObject
 from aiogram.fsm.context import FSMContext
 from datetime import datetime
 
@@ -340,3 +340,27 @@ async def become_teacher(callback_query: types.CallbackQuery):
     except Exception as e:
         print(e)
         await message.answer("Произошла ошибка при удалении экзаменатора.")
+
+@router.message(Command(commands=["make_admin"]))
+async def make_admin_command(message: types.Message, command: CommandObject, state: FSMContext):
+    try:
+        telegram_id = message.from_user.id
+        user = User(telegram_id)
+        if user.is_admin:
+            if len(command.args) == 0:
+                await message.answer("Пожалуйста, укажите telegram_id пользователя.")
+                return
+            target_telegram_id = command.args
+            target_user = User(target_telegram_id)
+            if target_user.exists():
+                target_user.is_admin = True
+                target_user.save()
+                await message.answer(f"Пользователь {target_user.name} теперь администратор.")
+            else:
+                await message.answer("Пользователь не найден.")
+        else:
+            await message.answer("У вас нет прав для выполнения этой команды.")
+    except Exception as e:
+        print(e)
+        await message.answer("Произошла ошибка при добавлении администратора.")
+
