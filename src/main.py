@@ -20,11 +20,15 @@ dp.include_router(exam.router)
 
 scheduler = AsyncIOScheduler()
 
+def print_hello():
+    print("===============")
+    print("Bot is working")
+    print("===============")
 
 async def main():
-    print("Bot started")
     scheduler.start()
     asyncio.create_task(check_new_exams(bot))
+    print_hello()
     await dp.start_polling(bot)
 
 if __name__ == '__main__':
