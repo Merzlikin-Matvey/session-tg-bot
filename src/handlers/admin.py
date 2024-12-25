@@ -251,11 +251,8 @@ async def process_task_image(message: types.Message, state: FSMContext, bot: Bot
             save_path = await save_task_rar(bot, message.document.file_id, exam_id)
         elif '.png' in message.document.file_name or '.jpg' in message.document.file_name:
             save_path = await save_task_image(bot, message.document.file_id, exam_id)
-        
         else:
             return
-        
-        # Добавь .jpg .png etc
 
         exam = Exam.get_exam_by_id(exam_id)
         if isinstance(save_path, str):
