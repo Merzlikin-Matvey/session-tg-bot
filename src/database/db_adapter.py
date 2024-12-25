@@ -18,6 +18,10 @@ class DatabaseAdapter:
         self.db.add(db_user)
         self.db.commit()
 
+    def update_user_is_admin(self, telegram_id, is_admin):
+        self.db.query(User).filter(User.telegram_id == str(telegram_id)).update({"is_admin": is_admin})
+        self.db.commit()
+
     def get_user_info(self, telegram_id):
         return self.db.query(User).filter(User.telegram_id == str(telegram_id)).first()
 
