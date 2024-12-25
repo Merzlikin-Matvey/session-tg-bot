@@ -20,10 +20,12 @@ dp.include_router(exam.router)
 
 scheduler = AsyncIOScheduler()
 
+
 def print_hello():
     print("===============")
     print("Bot is working")
     print("===============")
+
 
 async def main():
     scheduler.start()
