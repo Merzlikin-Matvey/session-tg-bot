@@ -2,11 +2,27 @@ version: '3.8'
 
 services:
   bot:
-    build: .
+    build:
+      context: .
+      dockerfile: docker/DockerfileServer
     container_name: session-container
     ports:
-      - "80:80"
+      - "8010:8010"
     env_file:
       - .env
-    volumes:
-      - .:/app
+    depends_on:
+      - db
+
+
+  db:
+    build:
+      context: .
+      dockerfile: docker/DockerfilePostgres
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: user
+      POSTGRES_DB: db
+      POSTGRES_PORT: 8011
+      POSTGRES_HOST: db
+    ports:
+      - "8011:8011"
