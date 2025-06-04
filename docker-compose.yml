@@ -27,4 +27,4 @@ services:
     ports:
       - "8011:8011"
     volumes:
-        - db_data:/var/lib/postgresql/data
+      - ./scheme.sql:/docker-entrypoint-initdb.d/schema.sql
