@@ -1,10 +1,30 @@
-name: Deploy project on server
+name: Deploy
 
-#on:
-#push:
-#  branches:
-#    - main
-#workflow_dispatch:
+on:
+  push:
+    branches: [main]
 
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
 
-# напишем в светлом и далеком будущем, обещаем!
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.DEPLOY_ADDRESS }}
+          username: github-deploy-user
+          password: ${{ secrets.DEPLOY_PASSWORD }}
+          script: |
+            docker compose down
+            if [ -d /home/session-bot ]; then
+              cd /home/session-bot
+              git pull origin main
+            else
+              git clone -b main --single-branch https://github.com/Merzlikin-Matvey/session-tg-bot.git /home/session-bot
+              cd /home/session-bot
+            fi
+            docker compose up --build -d

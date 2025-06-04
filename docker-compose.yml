@@ -26,3 +26,5 @@ services:
       POSTGRES_HOST: db
     ports:
       - "8011:8011"
+    volumes:
+        - db_data:/var/lib/postgresql/data
